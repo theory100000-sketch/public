@@ -289,19 +289,39 @@ boot();
 let room = null;
 let canalActual = null;
 
+// ================= RADIO LIVEKIT =================
+
+let room = null;
+let canalActual = null;
+const usernameRadio = "Theory"; // cambia esto luego por el usuario real
+
 async function entrarCanal(canal) {
   try {
+    // salir del canal anterior
     if (room) {
       room.disconnect();
       room = null;
     }
 
+    // limpiar canal anterior
+    if (canalActual) {
+      const oldCanal = document.getElementById(canalActual);
+      if (oldCanal) {
+        oldCanal.classList.remove("activo");
+        const oldCount = oldCanal.querySelector(".count");
+        const oldUsers = oldCanal.querySelector(".usuarios-canal");
+        if (oldCount) oldCount.innerText = "0";
+        if (oldUsers) oldUsers.innerHTML = "";
+      }
+    }
+
     canalActual = canal;
 
-    const username = "Theory"; // luego lo conectamos con usuario real
+    const canalDiv = document.getElementById(canal);
+    if (canalDiv) canalDiv.classList.add("activo");
 
     const res = await fetch(
-      `/api/livekit-token?username=${encodeURIComponent(username)}&room=${encodeURIComponent(canal)}`
+      `/api/livekit-token?username=${encodeURIComponent(usernameRadio)}&room=${encodeURIComponent(canal)}`
     );
 
     const data = await res.json();
@@ -311,30 +331,68 @@ async function entrarCanal(canal) {
       video: false
     });
 
-    room.on('trackSubscribed', (track) => {
-      if (track.kind === 'audio') {
+    console.log("Conectado a:", canal);
+
+    actualizarUsuariosCanal();
+
+    room.on("participantConnected", () => {
+      actualizarUsuariosCanal();
+    });
+
+    room.on("participantDisconnected", () => {
+      actualizarUsuariosCanal();
+    });
+
+    room.on("trackSubscribed", (track) => {
+      if (track.kind === "audio") {
         const audio = new Audio();
         track.attach(audio);
         audio.play();
       }
     });
 
-    console.log("Conectado a:", canal);
-
   } catch (err) {
     console.error("Error radio:", err);
   }
 }
 
-// PUSH TO TALK (tecla N)
-document.addEventListener('keydown', async (e) => {
-  if (e.key.toLowerCase() === 'n' && room) {
+function actualizarUsuariosCanal() {
+  if (!room || !canalActual) return;
+
+  const canalDiv = document.getElementById(canalActual);
+  if (!canalDiv) return;
+
+  const count = canalDiv.querySelector(".count");
+  let usersBox = canalDiv.querySelector(".usuarios-canal");
+
+  if (!usersBox) {
+    usersBox = document.createElement("div");
+    usersBox.className = "usuarios-canal";
+    canalDiv.appendChild(usersBox);
+  }
+
+  const usuarios = [usernameRadio];
+
+  room.remoteParticipants.forEach((participant) => {
+    usuarios.push(participant.name || participant.identity);
+  });
+
+  if (count) count.innerText = usuarios.length;
+
+  usersBox.innerHTML = usuarios
+    .map(nombre => `<div class="usuario-radio">● ${nombre}</div>`)
+    .join("");
+}
+
+// PUSH TO TALK - TECLA N
+document.addEventListener("keydown", async (e) => {
+  if (e.key.toLowerCase() === "n" && room) {
     await room.localParticipant.setMicrophoneEnabled(true);
   }
 });
 
-document.addEventListener('keyup', async (e) => {
-  if (e.key.toLowerCase() === 'n' && room) {
+document.addEventListener("keyup", async (e) => {
+  if (e.key.toLowerCase() === "n" && room) {
     await room.localParticipant.setMicrophoneEnabled(false);
   }
 });
