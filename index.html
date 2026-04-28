@@ -532,10 +532,78 @@ const criminalCode=[{ code:'1.1', article:'Conducción temeraria', description:'
 ];
 
 const radioGroups=[
-  {title:'South Units',className:'',channels:[{name:'ADAM-10',users:,{name:'ADAM-20',users:[]},{name:'ADAM-30',users:[]},{name:'ADAM-40',users:[]},{name:'ADAM-50',users:[]},{name:'MARY-1',users:[]},{name:'MARY-2',users:[]},{name:'MARY-3',users:[]},{name:'UNION-10',users:[]},{name:'UNION-20',users:[]},{name:'UNION-30',users:[]},{name:'KING-10',users:[]},{name:'KING-20',users:[]},{name:'TOM-1',users:[]},{name:'PEGASUS-10',users:[]}]},
-  {title:'North Units',className:'',channels:[{name:'ALPHA-10',users:[]},{name:'ALPHA-20',users:[]},{name:'ALPHA-30',users:[]},{name:'ALPHA-40',users:[]},{name:'ALPHA-50',users:[]},{name:'MIKE-1',users:[]},{name:'MIKE-2',users:[]},{name:'MIKE-3',users:[]},{name:'BRAVO-10',users:[]},{name:'BRAVO-20',users:[]},{name:'BRAVO-30',users:[]},{name:'CHARLIE-10',users:[]},{name:'CHARLIE-20',users:[]},{name:'FOXTROT-10',users:[]},{name:'EAGLE-10',users:[]}]},
-  {title:'Special Units',className:'',channels:[{name:'DISPATCH',users:[]},{name:'POLICE STATION',users:[]},{name:'AWAITING ASSIGNMENT',users:[]},{name:'TAC-01',users:[]},{name:'TAC-02',users:[]},{name:'TAC-03',users:[]},{name:'TAC-04',users:[]},{name:'DAVID-10',users:[]},{name:'DAVID-20',users:[]},{name:'DAVID-50',users:[]},{name:'K9 UNIT',users:[]},{name:'IAA OFFICE',users:[]},{name:'INVESTIGATION OFFICE',users:[]}]},
-  {title:'EMS Units',className:'ems',channels:[{name:'SAFD COMMAND',users:[]},{name:'FIRE UNIT 1',users:[]},{name:'FIRE UNIT 2',users:[]},{name:'FIRE UNIT 3',users:[]},{name:'EMS UNIT 1',users:[]},{name:'EMS UNIT 2',users:[]},{name:'EMS UNIT 3',users:[]},{name:'HOSPITAL',users:[]},{name:'FIRE STATION',users:[]}]}
+ <!-- SOUTH UNITS -->
+<div class="canal" id="ADAM-10" onclick="entrarCanal('ADAM-10')">ADAM-10 (<span class="count">0</span>)</div>
+<div class="canal" id="ADAM-20" onclick="entrarCanal('ADAM-20')">ADAM-20 (<span class="count">0</span>)</div>
+<div class="canal" id="ADAM-30" onclick="entrarCanal('ADAM-30')">ADAM-30 (<span class="count">0</span>)</div>
+<div class="canal" id="ADAM-40" onclick="entrarCanal('ADAM-40')">ADAM-40 (<span class="count">0</span>)</div>
+<div class="canal" id="ADAM-50" onclick="entrarCanal('ADAM-50')">ADAM-50 (<span class="count">0</span>)</div>
+
+<div class="canal" id="MARY-1" onclick="entrarCanal('MARY-1')">MARY-1 (<span class="count">0</span>)</div>
+<div class="canal" id="MARY-2" onclick="entrarCanal('MARY-2')">MARY-2 (<span class="count">0</span>)</div>
+<div class="canal" id="MARY-3" onclick="entrarCanal('MARY-3')">MARY-3 (<span class="count">0</span>)</div>
+
+<div class="canal" id="UNION-10" onclick="entrarCanal('UNION-10')">UNION-10 (<span class="count">0</span>)</div>
+<div class="canal" id="UNION-20" onclick="entrarCanal('UNION-20')">UNION-20 (<span class="count">0</span>)</div>
+<div class="canal" id="UNION-30" onclick="entrarCanal('UNION-30')">UNION-30 (<span class="count">0</span>)</div>
+
+<div class="canal" id="KING-10" onclick="entrarCanal('KING-10')">KING-10 (<span class="count">0</span>)</div>
+<div class="canal" id="KING-20" onclick="entrarCanal('KING-20')">KING-20 (<span class="count">0</span>)</div>
+
+<div class="canal" id="TOM-1" onclick="entrarCanal('TOM-1')">TOM-1 (<span class="count">0</span>)</div>
+<div class="canal" id="PEGASUS-10" onclick="entrarCanal('PEGASUS-10')">PEGASUS-10 (<span class="count">0</span>)</div>
+
+<!-- NORTH UNITS -->
+<div class="canal" id="ALPHA-10" onclick="entrarCanal('ALPHA-10')">ALPHA-10 (<span class="count">0</span>)</div>
+<div class="canal" id="ALPHA-20" onclick="entrarCanal('ALPHA-20')">ALPHA-20 (<span class="count">0</span>)</div>
+<div class="canal" id="ALPHA-30" onclick="entrarCanal('ALPHA-30')">ALPHA-30 (<span class="count">0</span>)</div>
+<div class="canal" id="ALPHA-40" onclick="entrarCanal('ALPHA-40')">ALPHA-40 (<span class="count">0</span>)</div>
+<div class="canal" id="ALPHA-50" onclick="entrarCanal('ALPHA-50')">ALPHA-50 (<span class="count">0</span>)</div>
+
+<div class="canal" id="MIKE-1" onclick="entrarCanal('MIKE-1')">MIKE-1 (<span class="count">0</span>)</div>
+<div class="canal" id="MIKE-2" onclick="entrarCanal('MIKE-2')">MIKE-2 (<span class="count">0</span>)</div>
+<div class="canal" id="MIKE-3" onclick="entrarCanal('MIKE-3')">MIKE-3 (<span class="count">0</span>)</div>
+
+<div class="canal" id="BRAVO-10" onclick="entrarCanal('BRAVO-10')">BRAVO-10 (<span class="count">0</span>)</div>
+<div class="canal" id="BRAVO-20" onclick="entrarCanal('BRAVO-20')">BRAVO-20 (<span class="count">0</span>)</div>
+<div class="canal" id="BRAVO-30" onclick="entrarCanal('BRAVO-30')">BRAVO-30 (<span class="count">0</span>)</div>
+
+<div class="canal" id="CHARLIE-10" onclick="entrarCanal('CHARLIE-10')">CHARLIE-10 (<span class="count">0</span>)</div>
+<div class="canal" id="CHARLIE-20" onclick="entrarCanal('CHARLIE-20')">CHARLIE-20 (<span class="count">0</span>)</div>
+
+<div class="canal" id="FOXTROT-10" onclick="entrarCanal('FOXTROT-10')">FOXTROT-10 (<span class="count">0</span>)</div>
+<div class="canal" id="EAGLE-10" onclick="entrarCanal('EAGLE-10')">EAGLE-10 (<span class="count">0</span>)</div>
+
+<!-- SPECIAL UNITS -->
+<div class="canal" id="DISPATCH" onclick="entrarCanal('DISPATCH')">DISPATCH (<span class="count">0</span>)</div>
+<div class="canal" id="POLICE-STATION" onclick="entrarCanal('POLICE-STATION')">POLICE STATION (<span class="count">0</span>)</div>
+<div class="canal" id="AWAITING" onclick="entrarCanal('AWAITING')">AWAITING ASSIGNMENT (<span class="count">0</span>)</div>
+
+<div class="canal" id="TAC-01" onclick="entrarCanal('TAC-01')">TAC-01 (<span class="count">0</span>)</div>
+<div class="canal" id="TAC-02" onclick="entrarCanal('TAC-02')">TAC-02 (<span class="count">0</span>)</div>
+<div class="canal" id="TAC-03" onclick="entrarCanal('TAC-03')">TAC-03 (<span class="count">0</span>)</div>
+<div class="canal" id="TAC-04" onclick="entrarCanal('TAC-04')">TAC-04 (<span class="count">0</span>)</div>
+
+<div class="canal" id="DAVID-10" onclick="entrarCanal('DAVID-10')">DAVID-10 (<span class="count">0</span>)</div>
+<div class="canal" id="DAVID-20" onclick="entrarCanal('DAVID-20')">DAVID-20 (<span class="count">0</span>)</div>
+<div class="canal" id="DAVID-50" onclick="entrarCanal('DAVID-50')">DAVID-50 (<span class="count">0</span>)</div>
+
+<div class="canal" id="K9" onclick="entrarCanal('K9')">K9 UNIT (<span class="count">0</span>)</div>
+<div class="canal" id="IAA" onclick="entrarCanal('IAA')">IAA OFFICE (<span class="count">0</span>)</div>
+<div class="canal" id="INVESTIGATION" onclick="entrarCanal('INVESTIGATION')">INVESTIGATION OFFICE (<span class="count">0</span>)</div>
+
+<!-- EMS -->
+<div class="canal" id="SAFD-COMMAND" onclick="entrarCanal('SAFD-COMMAND')">SAFD COMMAND (<span class="count">0</span>)</div>
+<div class="canal" id="FIRE-1" onclick="entrarCanal('FIRE-1')">FIRE UNIT 1 (<span class="count">0</span>)</div>
+<div class="canal" id="FIRE-2" onclick="entrarCanal('FIRE-2')">FIRE UNIT 2 (<span class="count">0</span>)</div>
+<div class="canal" id="FIRE-3" onclick="entrarCanal('FIRE-3')">FIRE UNIT 3 (<span class="count">0</span>)</div>
+
+<div class="canal" id="EMS-1" onclick="entrarCanal('EMS-1')">EMS UNIT 1 (<span class="count">0</span>)</div>
+<div class="canal" id="EMS-2" onclick="entrarCanal('EMS-2')">EMS UNIT 2 (<span class="count">0</span>)</div>
+<div class="canal" id="EMS-3" onclick="entrarCanal('EMS-3')">EMS UNIT 3 (<span class="count">0</span>)</div>
+
+<div class="canal" id="HOSPITAL" onclick="entrarCanal('HOSPITAL')">HOSPITAL (<span class="count">0</span>)</div>
+<div class="canal" id="FIRE-STATION" onclick="entrarCanal('FIRE-STATION')">FIRE STATION (<span class="count">0</span>)</div>
 ];
 
 const $=id=>document.getElementById(id);
