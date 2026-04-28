@@ -283,3 +283,58 @@ statusFilter.addEventListener('change', refreshFines);
 document.querySelectorAll('.module-card').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
 
 boot();
+
+// ================= RADIO LIVEKIT =================
+
+let room = null;
+let canalActual = null;
+
+async function entrarCanal(canal) {
+  try {
+    if (room) {
+      room.disconnect();
+      room = null;
+    }
+
+    canalActual = canal;
+
+    const username = "Theory"; // luego lo conectamos con usuario real
+
+    const res = await fetch(
+      `/api/livekit-token?username=${encodeURIComponent(username)}&room=${encodeURIComponent(canal)}`
+    );
+
+    const data = await res.json();
+
+    room = await LivekitClient.connect(data.url, data.token, {
+      audio: false,
+      video: false
+    });
+
+    room.on('trackSubscribed', (track) => {
+      if (track.kind === 'audio') {
+        const audio = new Audio();
+        track.attach(audio);
+        audio.play();
+      }
+    });
+
+    console.log("Conectado a:", canal);
+
+  } catch (err) {
+    console.error("Error radio:", err);
+  }
+}
+
+// PUSH TO TALK (tecla N)
+document.addEventListener('keydown', async (e) => {
+  if (e.key.toLowerCase() === 'n' && room) {
+    await room.localParticipant.setMicrophoneEnabled(true);
+  }
+});
+
+document.addEventListener('keyup', async (e) => {
+  if (e.key.toLowerCase() === 'n' && room) {
+    await room.localParticipant.setMicrophoneEnabled(false);
+  }
+});
