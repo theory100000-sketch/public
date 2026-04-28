@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1>Panel interno</h1>
+  <p id="msg">Cargando sesión...</p>
+  <button id="logout">Cerrar sesión</button>
+
+  <script>
+    async function loadSession() {
+      const res = await fetch('/api/me', { credentials: 'include' });
+
+      if (!res.ok) {
+        location.href = '/';
+        return;
+      }
+
+      const data = await res.json();
+      document.getElementById('msg').textContent =
+        'Sesión iniciada como ' + (data.agent?.displayName || data.agent?.username || 'usuario');
+    }
+
+    document.getElementById('logout').addEventListener('click', async () => {
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      location.href = '/';
+    });
+
+    loadSession();
+  </script>
+</body>
+</html>

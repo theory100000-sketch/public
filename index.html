@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MVPD MDT</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+:root{--bg1:#0a3973;--bg2:#051b36;--bg3:#020a16;--blue:#145dac;--panel:#465a76;--panel-soft:rgba(73,92,117,.42);--text:#edf5ff;--muted:#c5d3e2;--green:#9ae37f;--danger:#af2e2e;--tablet-bg:url('/img/bg.jpg')}
+body{min-height:100vh;color:var(--text);background:linear-gradient(rgba(3,10,20,.78),rgba(3,10,20,.78)),var(--tablet-bg) center/cover no-repeat fixed,radial-gradient(circle at 50% -10%, rgba(81,145,255,.20), transparent 34%),linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 62%,var(--bg3) 100%);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 80% 70%, rgba(255,255,255,.03), transparent 22%);opacity:.5}
+.wrapper{width:min(1820px,96vw);margin:0 auto;padding:14px 14px 24px;position:relative;z-index:2}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;background:linear-gradient(180deg, rgba(84,126,190,.58), rgba(45,75,124,.7));border:1px solid rgba(255,255,255,.07);border-radius:7px;font-size:12px;line-height:1;text-transform:uppercase;color:#ebf7ff;box-shadow:0 8px 18px rgba(0,0,0,.18);cursor:pointer}
+.tab.active{background:linear-gradient(180deg, rgba(109,175,255,.72), rgba(61,117,205,.78))}
+.tab-close{font-weight:700;opacity:.9;cursor:pointer}
+.screen{display:none}.screen.active{display:block}
+.header{display:grid;grid-template-columns:340px 1fr 260px;align-items:center;gap:14px;margin:6px 0 20px}
+.header-left{background:linear-gradient(180deg, rgba(214,233,255,.20), rgba(173,203,241,.10));border:1px solid rgba(255,255,255,.05);padding:15px 20px;border-radius:13px;font-size:16px;letter-spacing:.08em;text-transform:uppercase;width:fit-content;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.header-center{display:flex;justify-content:center;align-items:center;text-align:center;color:#9fe2ff;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.header-right{text-align:right;color:var(--green);font-size:16px;letter-spacing:.04em;text-transform:uppercase}
+.status-bar{margin:-6px 0 14px;padding:10px 14px;border-radius:10px;background:rgba(0,0,0,.22);font-size:13px;color:#dbe9f7}
+.status-bar.warn{background:rgba(175,46,46,.22);color:#ffd7d7}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:16px;width:min(1040px,100%);margin:10px auto 14px;justify-content:center}
+.tile,.box{border-radius:16px;background-size:cover;background-position:center;background-repeat:no-repeat;border:1px solid rgba(255,255,255,.05);box-shadow:0 10px 24px rgba(0,0,0,.24);transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;cursor:pointer;will-change:transform;transform-style:preserve-3d}
+.tile{height:150px;background-color:rgba(17,36,67,.72);overflow:hidden;position:relative}
+.box{height:126px}
+.tile:hover,.box:hover{box-shadow:0 18px 32px rgba(0,0,0,.34);filter:brightness(1.05)}
+.bottom{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px;width:min(540px,100%);margin:0 auto 14px}
+.footer{width:46%;margin:0 auto;background:linear-gradient(180deg, rgba(13,20,32,.86), rgba(8,13,23,.92));border:1px solid rgba(255,255,255,.04);box-shadow:0 10px 22px rgba(0,0,0,.24);border-radius:10px;padding:14px 16px;backdrop-filter:blur(8px)}
+.footer b{display:block;font-size:13px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.03em}.footer p{font-size:12px;color:#a4bfd8;line-height:1.45}
+.actions{position:fixed;left:14px;bottom:14px;display:flex;gap:8px;z-index:5}.actions div{background:linear-gradient(180deg, rgba(78,99,130,.88), rgba(45,56,74,.92));border:1px solid rgba(255,255,255,.06);box-shadow:0 8px 18px rgba(0,0,0,.22);padding:9px 13px;border-radius:7px;font-size:12px;letter-spacing:.03em;text-transform:uppercase;backdrop-filter:blur(8px)}
+.search-layout,.reports-layout,.agents-layout{display:grid;grid-template-columns:360px 1fr;gap:18px}
+.sidebar,.profile-panel,.report-panel,.agent-panel{background:rgba(32,49,74,.48);border-radius:12px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.18);position:relative;backdrop-filter:blur(10px)}
+.sidebar-title,.profile-title,.report-title,.agent-title{background:linear-gradient(180deg, rgba(216,233,251,.24), rgba(195,216,240,.1));border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px 18px;font-size:18px;letter-spacing:.08em;text-transform:uppercase;color:#eef7ff;margin-bottom:12px;text-align:center}
+.search-bar{display:grid;grid-template-columns:1fr 56px;gap:0;margin-bottom:12px}
+.search-input{height:46px;background:#22364f;border:none;border-radius:8px 0 0 8px;color:#fff;padding:0 14px;font-size:15px;outline:none}
+.search-btn{border:none;background:#0e59af;color:#fff;border-radius:0 8px 8px 0;font-size:22px;cursor:pointer}
+#citizen-list,#report-list,#agent-list{max-height:70vh;overflow:auto;padding-right:4px}
+.citizen-item,.report-list-item,.agent-item{display:grid;gap:12px;align-items:center;border-radius:9px;padding:12px;margin-bottom:12px;cursor:pointer;border:2px solid transparent}
+.citizen-item,.agent-item{grid-template-columns:58px 1fr;background:rgba(216,221,228,.92);color:#101820}.citizen-item.active,.report-list-item.active,.agent-item.active{border-color:#8bb8ff}
+.citizen-thumb,.agent-thumb{width:58px;height:58px;border-radius:8px;background:#111 center/cover no-repeat}
+.citizen-name{font-size:22px;font-weight:700;letter-spacing:.02em}
+.citizen-meta,.report-meta,.agent-meta{font-size:11px;color:#6a7077;margin-top:6px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.profile-grid{display:grid;grid-template-columns:190px 1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.photo-box{grid-row:span 3;height:220px;border-radius:10px;background:#1a1e24 center/cover no-repeat}
+.info-box{background:rgba(70,90,118,.82);border-radius:8px;padding:12px 14px;min-height:66px;display:flex;flex-direction:column;justify-content:center;backdrop-filter:blur(8px)}
+.info-label{font-size:12px;text-transform:uppercase;color:#d7e3ef;opacity:.9;margin-bottom:4px}.info-value{font-size:21px;font-weight:700}
+.toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.toggle-box{background:rgba(70,90,118,.82);border-radius:8px;padding:10px;backdrop-filter:blur(8px)}.toggle-title{text-align:center;text-transform:uppercase;font-size:14px;color:#d7e3ef;margin-bottom:8px}.toggle-switch{display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(255,255,255,.2);border-radius:4px;overflow:hidden}.toggle-switch button{height:36px;border:none;background:transparent;color:#eef7ff;font-weight:700;cursor:pointer}.toggle-switch button.active{background:var(--blue)}
+.content-grid{display:grid;grid-template-columns:1.35fr 1.1fr;gap:10px;margin-bottom:10px}.panel-box,.mini-box,.report-box,.agent-box{background:var(--panel-soft);border-radius:8px;min-height:250px;padding:10px;position:relative;backdrop-filter:blur(10px)}.report-box{min-height:170px}.agent-box{min-height:230px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#eef7ff;text-transform:uppercase;font-size:14px}.ghost-btn{opacity:.8;cursor:pointer}.note-list,.fine-list,.license-list,.complaint-list,.agent-list-mini{display:flex;flex-direction:column;gap:8px}
+.note-card{background:rgba(214,224,235,.18);border-radius:6px;padding:10px 12px;color:#eef7ff;position:relative}.item-remove{position:absolute;top:8px;right:8px;width:24px;height:24px;border:none;border-radius:50%;background:rgba(0,0,0,.28);color:#fff;cursor:pointer;font-size:14px;line-height:24px;text-align:center}.note-title{font-size:15px;text-transform:uppercase;margin-bottom:4px}.note-sub{font-size:12px;color:#c3d0dd;margin-bottom:6px}.note-footer{font-size:11px;color:#c8d3df;display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+.note-form input,.note-form textarea,.generic-form input,.generic-form textarea,.generic-form select,.report-box input,.report-box textarea,.report-box select{width:100%;background:#31465f;border:none;color:#fff;border-radius:6px;padding:10px 12px;outline:none;margin-bottom:8px}.note-form textarea,.generic-form textarea,.report-box textarea{height:88px;resize:none}.note-actions{display:flex;justify-content:space-between;gap:8px}.small-btn,.small-btn-dark{border:none;border-radius:6px;padding:10px 18px;cursor:pointer;font-size:12px;text-transform:uppercase;background:#d7d8da;color:#222}
+.bottom-mini-grid,.agent-bottom-grid{display:grid;grid-template-columns:1.35fr .8fr .8fr;gap:10px}.mini-box{min-height:150px}.tag-pill{display:inline-flex;align-items:center;background:#ececec;color:#30353b;border-radius:999px;padding:4px 16px;font-size:12px;font-weight:700;max-width:100%}.license-card{background:rgba(204,214,224,.15);border-radius:6px;padding:10px 12px;color:#dce7f2;width:100%}.muted-empty{color:#b9c7d5;background:rgba(206,217,227,.12);border-radius:6px;padding:10px 12px;font-size:13px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:20}.overlay.active{display:flex}.modal{width:min(520px,92vw);background:#4b4b4b;border-radius:10px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.45)}.modal-title{display:inline-block;background:#1f75cf;color:#fff;padding:10px 18px;border-radius:10px;font-size:20px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}.license-option{background:#5b5b5b;color:#fff;border-radius:6px;padding:16px 18px;font-size:18px;text-transform:uppercase;margin-bottom:10px;cursor:pointer}.modal-actions{display:flex;justify-content:flex-end;margin-top:20px}.cancel-btn{background:#222;color:#fff;border:none;border-radius:8px;padding:12px 18px;font-size:16px;text-transform:uppercase;cursor:pointer}
+.fine-overlay .modal{width:min(1560px,96vw);padding:18px 18px 20px;border-radius:10px}.fine-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.fine-close{font-size:28px;cursor:pointer;color:#fff}.fine-grid{display:grid;grid-template-columns:2.1fr 1fr;gap:20px}.fine-title,.fine-subtitle{background:#0d64c6;color:#fff;border-radius:4px;padding:8px 12px;text-align:center;text-transform:uppercase;font-size:28px;font-weight:800;letter-spacing:.08em;margin-bottom:10px}.fine-subtitle{font-size:26px}
+.fine-search{width:100%;height:36px;background:#101010;border:none;color:#eee;padding:0 10px;margin-bottom:8px}.fine-table{width:100%;border-collapse:collapse;background:#353535;color:#f2f2f2;font-size:13px;table-layout:fixed}.fine-table th,.fine-table td{border:2px solid #1f1f1f;padding:10px;vertical-align:top}.fine-table th{background:#101010;text-transform:uppercase;text-align:left}.fine-table .center{text-align:center}.add-btn{background:#e7e7e7;color:#222;border:none;padding:10px 16px;border-radius:0;cursor:pointer;width:100%}.side-panel{background:#2a2a2a;min-height:570px;padding:14px;border-radius:4px;color:#ddd}.side-section-title{font-size:18px;text-transform:uppercase;margin-bottom:10px}
+.custom-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-top:10px}.custom-row input{height:42px;background:#101010;border:none;color:#ddd;padding:0 12px}.add-custom{background:#0d64c6;border:none;color:#fff;padding:0 18px;cursor:pointer}.process-box{background:#101010;padding:14px;margin-top:18px;color:#ddd}.process-box .confirm{width:100%;height:38px;margin-top:12px;background:#ddd;border:none;color:#555;text-transform:uppercase;cursor:pointer}.concept-chip{background:#4a4a4a;color:#fff;border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;gap:10px}.concept-chip button{background:none;border:none;color:#fff;cursor:pointer}
+.new-report-btn{margin-left:auto;background:linear-gradient(180deg, rgba(214,233,255,.20), rgba(173,203,241,.10));border:1px solid rgba(255,255,255,.05);padding:10px 14px;border-radius:10px;font-size:14px;color:#eef7ff;text-transform:uppercase;cursor:pointer}.report-list-item{background:#eceff3;color:#111;grid-template-columns:1fr}.report-list-item.pink{background:#f5b7bc}.report-item-title{font-size:16px;font-weight:700;text-transform:uppercase}.report-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;color:#d9e5f0;text-align:center;padding:40px}
+.report-top-grid,.report-bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}.report-mid-grid,.agent-rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.report-large{min-height:180px}.report-row-chip{background:rgba(214,224,235,.18);border-radius:6px;padding:10px 12px;color:#eef7ff;display:flex;justify-content:space-between;gap:10px;align-items:center}.chip-stack{display:flex;flex-wrap:wrap;gap:8px}.delete-report-btn{background:var(--danger);color:#fff;border:none;padding:10px 16px;border-radius:6px;text-transform:uppercase;cursor:pointer;margin-top:10px}
+.glass{backdrop-filter:blur(14px);background:rgba(30,40,60,.75);border:1px solid rgba(255,255,255,.08)}
+.fine-left,.fine-right{display:flex;flex-direction:column}
+.fine-table-wrap{display:flex;flex-direction:column;height:400px;overflow:hidden;border:1px solid #1f1f1f}
+.fine-table-head{flex:0 0 auto}
+.fine-table-scroll{overflow-y:auto;height:100%}
+.fine-col-code{width:150px}.fine-col-desc{width:auto}.fine-col-amount{width:120px}.fine-col-sentence{width:150px}.fine-col-action{width:120px}
+.radio-shell{width:100%;border-radius:14px;padding:14px 14px 12px;background:linear-gradient(180deg, rgba(7,26,52,.78), rgba(3,14,31,.82));box-shadow:0 18px 40px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.05)}
+.radio-main-head{display:grid;grid-template-columns:1fr auto auto;gap:18px;align-items:center;background:linear-gradient(180deg, rgba(174,195,220,.55), rgba(130,154,184,.45));border:1px solid rgba(255,255,255,.10);border-radius:10px;min-height:60px;padding:0 18px;margin-bottom:22px}
+.radio-main-title{color:#eef7ff;font-size:22px;letter-spacing:.18em;text-transform:uppercase}
+.radio-connected-box{min-width:210px;min-height:48px;border-radius:6px;background:linear-gradient(180deg, #1fdd68, #0cba54);color:#fff;text-align:center;display:flex;flex-direction:column;justify-content:center;font-weight:800;line-height:1.1;text-transform:uppercase;letter-spacing:.08em;box-shadow:0 8px 18px rgba(0,0,0,.25);padding:8px 14px}
+.radio-connected-box small{font-size:10px;opacity:.92;margin-bottom:3px;letter-spacing:.10em}
+.radio-buttons-btn,.radio-disconnect-btn{height:42px;padding:0 18px;border:none;border-radius:8px;background:linear-gradient(180deg, rgba(150,160,173,.8), rgba(108,117,131,.85));border:1px solid rgba(255,255,255,.15);color:#fff;text-transform:uppercase;font-size:14px;font-weight:700;cursor:pointer}
+.radio-disconnect-btn{background:linear-gradient(180deg,#18d862,#0fb953);margin-top:8px;height:34px;font-size:12px}
+.radio-columns{display:grid;grid-template-columns:repeat(4, minmax(240px, 1fr));gap:18px}
+.radio-column{min-height:760px;border-radius:12px;background:linear-gradient(180deg, rgba(125,145,170,.38), rgba(103,122,146,.32));border:1px solid rgba(255,255,255,.08);padding:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 10px 24px rgba(0,0,0,.22);position:relative;overflow:hidden}
+.radio-column.ems::after{content:"";position:absolute;inset:auto -60px -30px auto;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.08), transparent 68%);opacity:.35;pointer-events:none}
+.radio-column-title{height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(101,162,214,.96), rgba(74,123,173,.96));border:1px solid rgba(255,255,255,.12);color:#f8fbff;font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:.10em;margin-bottom:10px}
+.radio-list{display:flex;flex-direction:column;gap:6px}
+.radio-channel{border-radius:7px;overflow:hidden}
+.radio-channel-head{min-height:30px;padding:0 10px;background:linear-gradient(180deg, rgba(35,36,39,.96), rgba(19,20,23,.98));border:1px solid rgba(102,131,171,.45);border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eef4fb;font-size:12px;text-transform:uppercase;cursor:pointer}
+.radio-channel.active .radio-channel-head{border-color:rgba(255,255,255,.15);background:linear-gradient(180deg, rgba(228,229,230,.95), rgba(198,200,203,.96));color:#1b1f24}
+.radio-channel-left{display:flex;align-items:center;gap:8px;min-width:0}.radio-channel-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.radio-channel-right{display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:11px}.radio-count{color:#c85a67;font-weight:700}.radio-channel.active .radio-count{color:#29b35d}.radio-arrow{font-size:11px;opacity:.8}
+.radio-users{display:none;margin-top:4px;background:linear-gradient(180deg, rgba(29,30,33,.96), rgba(17,18,20,.98));border:1px solid rgba(88,116,151,.35);border-radius:7px;padding:6px 8px}
+.radio-channel.open .radio-users{display:block}
+.radio-user{min-height:30px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eef7ff;font-size:12px}.radio-user-left{display:flex;align-items:center;gap:8px;min-width:0}
+.radio-user-dot{width:14px;height:14px;border-radius:50%;background:linear-gradient(180deg, #3ff2ac, #0bbd77);box-shadow:0 0 10px rgba(63,242,172,.4);flex:0 0 14px}
+.radio-user-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.radio-user-badge{background:#d67b2d;color:#fff;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.radio-speaking{color:#3df47c;font-size:10px;font-weight:800;text-transform:uppercase}.radio-empty{color:#90a7be;font-size:11px;padding:4px 0}
+#login-step-1 button,#login-step-2 button{width:100%;height:52px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.06em}
+#discord-login-btn{background:#5865F2;color:white}
+#continue-local-btn{background:#d7d8da;color:#222;margin-top:10px;height:46px;font-size:14px}
+#confirm-badge-btn{background:#16a34a;color:#fff}
+#badge-input{width:100%;height:48px;border:none;border-radius:12px;padding:0 14px;font-size:15px;text-align:center;margin-bottom:12px;background:#22364f;color:#fff;outline:none}
+@media (max-width:1400px){.grid{grid-template-columns:repeat(3,1fr)}.search-layout,.reports-layout,.agents-layout{grid-template-columns:1fr}.profile-grid{grid-template-columns:160px 1fr 1fr}.report-top-grid,.report-bottom-grid,.agent-bottom-grid{grid-template-columns:1fr 1fr}.radio-columns{grid-template-columns:repeat(2, minmax(260px,1fr))}.radio-column{min-height:640px}}
+@media (max-width:980px){.header{grid-template-columns:1fr;text-align:center;gap:8px}.header-left{margin:0 auto}.header-right{text-align:center}.grid{grid-template-columns:repeat(2,1fr)}.bottom,.footer{width:100%}.actions{position:static;margin-top:16px}.profile-grid{grid-template-columns:1fr}.photo-box{grid-row:auto;height:240px}.content-grid,.bottom-mini-grid,.fine-grid,.report-mid-grid,.agent-rank-grid,.agent-bottom-grid{grid-template-columns:1fr}.report-top-grid,.report-bottom-grid{grid-template-columns:1fr}.radio-main-head{grid-template-columns:1fr;text-align:center;padding:14px}}
+@media (max-width:820px){.radio-columns{grid-template-columns:1fr}.radio-column{min-height:auto}}
+@media (max-width:640px){.grid{grid-template-columns:1fr}.bottom{grid-template-columns:1fr}.custom-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(rgba(4,14,28,.72),rgba(4,14,28,.72)),url('/assets/bg.png') center/cover no-repeat fixed,linear-gradient(180deg,#0a3973 0%,#051b36 62%,#020a16 100%)">
+  <div style="width:min(520px,92vw);background:rgba(14,27,49,.92);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center">
+    <div style="font-size:28px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">MVPD MDT</div>
+    <div style="color:#bcd1e7;line-height:1.5;margin-bottom:18px">Primero verifica cómo quieres entrar. Después introduce tu número de placa para cargar tu PJ.</div>
+
+    <div id="login-step-1">
+      <div id="login-status" style="margin-bottom:16px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);color:#dce9f7;font-size:13px">Selecciona cómo quieres entrar.</div>
+      <button id="discord-login-btn">Entrar con Discord</button>
+      <button id="continue-local-btn">Entrar en modo local</button>
+    </div>
+
+    <div id="login-step-2" style="display:none">
+      <div id="badge-status" style="margin-bottom:16px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);color:#dce9f7;font-size:13px">Verificación completada. Introduce tu número de placa.</div>
+      <input id="badge-input" placeholder="Introduce tu número de placa">
+      <button id="confirm-badge-btn">Entrar al MDT</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-root" style="display:none">
+<div class="wrapper">
+  <div class="tabs" id="tabs"></div>
+  <div id="api-status" class="status-bar">Modo local activo.</div>
+
+  <section class="screen active" id="home-screen">
+    <div class="header">
+      <div class="header-left">Servicios públicos</div>
+      <div class="header-center">👮 1 policía en servicio</div>
+      <div class="header-right" id="agent-name-header">En servicio</div>
+    </div>
+
+    <div class="grid">
+      <div class="tile" id="open-search" style="background-image:url('/assets/buscar.png')"></div>
+      <div class="tile" id="open-reports" style="background-image:url('/assets/denuncias.png')"></div>
+      <div class="tile" id="open-fines" style="background-image:url('/assets/vehiculos.png')"></div>
+      <div class="tile" id="open-agents" style="background-image:url('/assets/administracion.png')"></div>
+      <div class="tile" style="background-image:url('/assets/deudores.png')"></div>
+      <div class="tile" style="background-image:url('/assets/busca_y_captura.png')"></div>
+    </div>
+
+    <div class="bottom">
+      <div class="box" id="open-radio" style="background-image:url('/assets/radio.png')"></div>
+      <div class="box" style="background-image:url('/assets/servicio.png')"></div>
+    </div>
+
+    <div class="footer">
+      <b>Bienvenido a la red interna de la policía</b>
+      <p>Bienvenido a la aplicación oficial de la policía y el sheriff. Esta aplicación ha sido diseñada para mejorar la eficiencia y la comunicación en el trabajo diario de los agentes de policía y sheriffs.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="search-screen">
+    <div class="header"><div class="header-left">Buscar ciudadano</div><div></div><div></div></div>
+    <div class="search-layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Lista de ciudadanos</div>
+        <div class="search-bar"><input id="citizen-search" class="search-input" placeholder="Buscar un ciudadano..."><button class="search-btn" id="do-search">⌕</button></div>
+        <div id="citizen-list"></div>
+      </aside>
+      <main class="profile-panel">
+        <div class="profile-title">Perfil de ciudadano</div>
+        <div class="profile-grid">
+          <div class="photo-box" id="citizen-photo"></div>
+          <div class="info-box"><div class="info-label">Nombre</div><div class="info-value" id="field-name"></div></div>
+          <div class="info-box"><div class="info-label">Apellido</div><div class="info-value" id="field-surname"></div></div>
+          <div class="info-box"><div class="info-label">Género</div><div class="info-value" id="field-gender"></div></div>
+          <div class="info-box"><div class="info-label">Nacionalidad</div><div class="info-value" id="field-nationality"></div></div>
+          <div class="info-box"><div class="info-label">Fecha de nacimiento</div><div class="info-value" id="field-birth"></div></div>
+          <div class="info-box"><div class="info-label">ID</div><div class="info-value" id="field-id"></div></div>
+          <div class="info-box"><div class="info-label">Número de teléfono</div><div class="info-value" id="field-phone"></div></div>
+          <div class="info-box"><div class="info-label">Número de cuenta bancaria</div><div class="info-value" id="field-bank" style="font-size:17px"></div></div>
+          <div class="info-box"><div class="info-label">Trabajo</div><div class="info-value" id="field-job"></div></div>
+        </div>
+        <div class="agent-rank-grid" style="margin-bottom:12px">
+          <div class="info-box">
+            <div class="info-label">Foto del ciudadano</div>
+            <div class="info-value" style="font-size:15px">Personalizable</div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <input id="citizen-photo-input" type="file" accept="image/*" style="display:none">
+              <button class="small-btn" id="upload-citizen-photo">Subir foto</button>
+              <button class="small-btn" id="set-citizen-photo-url">Poner URL (imagen también permitida)</button>
+            </div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-box"><div class="toggle-title">En busca y captura</div><div class="toggle-switch" id="wanted-toggle"><button data-value="true">SI</button><button data-value="false">NO</button></div></div>
+          <div class="toggle-box"><div class="toggle-title">Peligroso</div><div class="toggle-switch" id="danger-toggle"><button data-value="true">SI</button><button data-value="false">NO</button></div></div>
+        </div>
+        <div class="content-grid">
+          <div class="panel-box"><div class="panel-head"><span>❞ Notas</span><span class="ghost-btn" id="new-note-btn">+ Nueva nota</span></div><div id="note-view" class="note-list"></div><div class="note-form" id="note-form" style="display:none"><input id="note-title-input" placeholder="Título de la nota"><textarea id="note-text-input" placeholder="Texto de la nota"></textarea><div class="note-actions"><button class="small-btn-dark" id="cancel-note">Cancelar</button><button class="small-btn" id="save-note">Guardar</button></div></div></div>
+          <div class="panel-box"><div class="panel-head"><span>🧾 Multas</span><span class="ghost-btn" id="open-fine-modal-2">+ Añadir multa</span></div><div id="fine-list" class="fine-list"></div></div>
+        </div>
+        <div class="bottom-mini-grid">
+          <div class="mini-box"><div class="panel-head"><span>🗎 Denuncias</span><span></span></div><div id="complaint-list" class="complaint-list"></div></div>
+          <div class="mini-box"><div class="panel-head"><span>🪪 Licencias</span><span class="ghost-btn" id="open-license-modal">+ Agregar licencia</span></div><div id="license-list" class="license-list"></div></div>
+          <div class="mini-box"><div class="panel-head"><span>🔫 Armas</span><span></span></div><div id="weapons-list"></div></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section class="screen" id="reports-screen">
+    <div class="header"><div class="header-left">Denuncias</div><div></div><button class="new-report-btn" id="new-report-btn">+ Nueva denuncia</button></div>
+    <div class="reports-layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Lista de denuncias</div>
+        <div class="search-bar"><input id="report-search" class="search-input" placeholder="Buscar una denuncia..."><button class="search-btn" id="do-report-search">⌕</button></div>
+        <select id="report-tag-filter" class="search-input" style="border-radius:8px;margin-bottom:12px;height:44px"><option value="">Todos los tags</option></select>
+        <div id="report-list"></div>
+      </aside>
+      <main class="report-panel">
+        <div class="report-title">Denuncia</div>
+        <div id="report-empty" class="report-empty">SELECCIONE UN INFORME PARA CARGAR SU INFORMACIÓN</div>
+        <div id="report-detail" style="display:none">
+          <div class="report-top-grid">
+            <div class="info-box"><div class="info-label">Nombre de la denuncia</div><input id="rep-name-input" class="search-input" style="border-radius:8px;height:42px" placeholder="Nombre de la denuncia"></div>
+            <div class="info-box"><div class="info-label">ID de la denuncia</div><div class="info-value" id="rep-id"></div></div>
+            <div class="info-box"><div class="info-label">Fecha y hora</div><div class="info-value" id="rep-date" style="font-size:18px"></div></div>
+          </div>
+          <div class="report-mid-grid">
+            <div class="info-box"><div class="info-label">Agente a cargo</div><select id="rep-agent-select" class="search-input" style="border-radius:8px;height:42px"></select></div>
+            <div class="info-box"><div class="info-label">Localización</div><input id="rep-location-input" class="search-input" style="border-radius:8px;height:42px" placeholder="Localización"></div>
+          </div>
+          <div class="report-box report-large" style="margin-bottom:10px"><div class="panel-head"><span>🗎 Descripción de la denuncia</span><span></span></div><textarea id="rep-description" style="height:150px;background:#1d2b3d"></textarea></div>
+          <div class="report-mid-grid">
+            <div class="report-box"><div class="panel-head"><span>❞ Evidencias</span><span class="ghost-btn" id="add-evidence-btn">+ Añadir evidencia</span></div><div id="rep-evidence-list" class="complaint-list"></div></div>
+            <div class="report-box"><div class="panel-head"><span>🪪 Personas involucradas</span><span class="ghost-btn" id="add-person-btn">+ Añadir persona</span></div><div id="rep-people-list" class="complaint-list"></div></div>
+          </div>
+          <div class="report-bottom-grid">
+            <div class="report-box">
+              <div class="panel-head"><span>🏷 Tags</span><span></span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <select id="tag-select"><option value="">Selecciona una etiqueta</option><option>Drogas</option><option>Robo menor</option><option>Arma</option><option>Asalto</option></select>
+                <button class="small-btn" id="add-tag-btn">Añadir tag</button>
+              </div>
+              <div id="rep-tags" class="chip-stack"></div>
+            </div>
+            <div class="report-box"><div class="panel-head"><span>⚔ Víctimas</span><span class="ghost-btn" id="add-victim-btn">+ Añadir víctima</span></div><div id="rep-victims-list" class="complaint-list"></div></div>
+            <div class="report-box"><div class="panel-head"><span>🚗 Vehículos</span><span class="ghost-btn" id="add-vehicle-btn">+ Añadir vehículo</span></div><div id="rep-vehicles-list" class="complaint-list"></div></div>
+          </div>
+          <button class="delete-report-btn" id="delete-report-btn">Eliminar denuncia</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section class="screen" id="agents-screen">
+    <div class="header">
+      <div class="header-left">Administración de policías</div>
+      <div></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="new-report-btn" id="generate-badge-btn">🪪 Generar placa</button>
+        <button class="new-report-btn" id="new-agent-btn">+ Añadir policía</button>
+      </div>
+    </div>
+    <div class="agents-layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Police List</div>
+        <div class="search-bar"><input id="agent-search" class="search-input" placeholder="Buscar un agente..."><button class="search-btn" id="do-agent-search">⌕</button></div>
+        <div id="agent-list"></div>
+      </aside>
+      <main class="agent-panel">
+        <div class="agent-title">Ficha policial</div>
+        <div id="agent-empty" class="report-empty">SELECCIONE UN AGENTE PARA CARGAR SU INFORMACIÓN</div>
+        <div id="agent-detail" style="display:none">
+          <div class="profile-grid">
+            <div class="photo-box" id="agent-photo"></div>
+            <div class="info-box"><div class="info-label">Nombre</div><div class="info-value" id="agent-name"></div></div>
+            <div class="info-box"><div class="info-label">Apellido</div><div class="info-value" id="agent-surname"></div></div>
+            <div class="info-box"><div class="info-label">Género</div><div class="info-value" id="agent-gender"></div></div>
+            <div class="info-box"><div class="info-label">Nacionalidad</div><div class="info-value" id="agent-nationality"></div></div>
+            <div class="info-box"><div class="info-label">Fecha de nacimiento</div><div class="info-value" id="agent-birth"></div></div>
+            <div class="info-box"><div class="info-label">ID</div><div class="info-value" id="agent-id"></div></div>
+            <div class="info-box"><div class="info-label">Teléfono</div><div class="info-value" id="agent-phone"></div></div>
+            <div class="info-box"><div class="info-label">Número de cuenta bancaria</div><div class="info-value" id="agent-bank" style="font-size:17px"></div></div>
+            <div class="info-box"><div class="info-label">Jurisdicción</div><div class="info-value" id="agent-jurisdiction"></div></div>
+          </div>
+          <div class="agent-rank-grid">
+            <div class="info-box"><div class="info-label">Rango</div><div class="info-value" id="agent-rank"></div><button class="small-btn" id="edit-agent-rank" style="margin-top:10px;width:max-content">Cambiar rango</button></div>
+            <div class="info-box"><div class="info-label">Número de placa</div><div class="info-value" id="agent-badge"></div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="small-btn" id="edit-agent-badge">Cambiar placa</button><button class="small-btn" id="generate-badge-inline">Generar placa</button></div></div>
+          </div>
+          <div class="agent-rank-grid" style="margin-top:-2px">
+            <div class="info-box"><div class="info-label">Jurisdicción</div><div class="info-value" id="agent-jurisdiction-edit"></div><button class="small-btn" id="edit-agent-jurisdiction" style="margin-top:10px;width:max-content">Cambiar jurisdicción</button></div>
+            <div class="info-box"><div class="info-label">Foto del agente</div><div class="info-value" style="font-size:15px">Personalizable</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="agent-photo-input" type="file" accept="image/*" style="display:none"><button class="small-btn" id="upload-agent-photo">Subir foto</button><button class="small-btn" id="set-agent-photo-url">Poner URL</button></div></div>
+          </div>
+          <div class="content-grid">
+            <div class="panel-box"><div class="panel-head"><span>❞ Notas</span><span class="ghost-btn" id="new-agent-note-btn">+ Nueva nota</span></div><div id="agent-note-view" class="note-list"></div><div class="note-form" id="agent-note-form" style="display:none"><input id="agent-note-title-input" placeholder="Título de la nota"><textarea id="agent-note-text-input" placeholder="Texto de la nota"></textarea><div class="note-actions"><button class="small-btn-dark" id="cancel-agent-note">Cancelar</button><button class="small-btn" id="save-agent-note">Guardar</button></div></div></div>
+            <div class="panel-box"><div class="panel-head"><span>🗎 Informes</span><span></span></div><div id="agent-reports-list" class="chip-stack"></div></div>
+          </div>
+          <div class="agent-bottom-grid">
+            <div class="agent-box"><div class="panel-head"><span>🏅 Medallas</span><span class="ghost-btn" id="add-medal-btn">+ Añadir medalla</span></div><div id="agent-medals-list" class="agent-list-mini"></div></div>
+            <div class="agent-box"><div class="panel-head"><span>🏢 Divisiones</span><span class="ghost-btn" id="add-division-btn">+ Establecer división</span></div><div id="agent-divisions-list" class="agent-list-mini"></div></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="delete-report-btn" id="fire-agent-btn">Despedir al policía</button></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section class="screen" id="radio-screen">
+    <div class="radio-shell">
+      <div class="radio-main-head">
+        <div class="radio-main-title">INTERNAL RADIO</div>
+        <div class="radio-connected-box" id="radio-current-banner"><small>DESCONECTADO</small>🔴 SIN RADIO</div>
+        <button class="radio-buttons-btn">PULSA N PARA HABLAR</button>
+      </div>
+      <div class="radio-columns" id="radio-grid"></div>
+    </div>
+  </section>
+
+  <div class="actions"><div>🧳 Control de tiempo</div><div>↔ Operaciones</div></div>
+</div>
+
+<div class="overlay" id="license-overlay"><div class="modal"><div class="modal-title">Agregar nueva licencia</div><div class="license-option" data-license="negocio">🪪 Negocio</div><div class="license-option" data-license="conductor">🪪 Conductor</div><div class="license-option" data-license="arma">🪪 Arma</div><div class="modal-actions"><button class="cancel-btn" id="close-license">Cancelar</button></div></div></div>
+
+<div class="overlay" id="prompt-overlay"><div class="modal"><div class="modal-title" id="prompt-title">Agregar</div><div class="generic-form"><input id="prompt-input-1" placeholder="Texto"><input id="prompt-input-2" placeholder="Dato extra"><textarea id="prompt-input-3" placeholder="Descripción" style="display:none"></textarea></div><div class="modal-actions"><button class="cancel-btn" id="prompt-cancel">Cancelar</button><button class="small-btn" id="prompt-save">Guardar</button></div></div></div>
+
+<div class="overlay" id="agent-overlay"><div class="modal"><div class="modal-title" id="agent-overlay-title">Agregar</div><div class="generic-form"><input id="agent-overlay-input-1" placeholder="Texto"><input id="agent-overlay-input-2" placeholder="Dato extra"><select id="agent-overlay-select" style="display:none"><option value="">Selecciona rango</option><option>Cadete</option><option>Oficial I</option><option>Oficial II</option><option>Sargento II</option><option>Comisario</option></select><select id="agent-overlay-select-2" style="display:none"><option value="">Selecciona jurisdicción</option><option>LSPD</option><option>BCSO</option><option>SASP</option><option>DOC</option><option>FIB</option></select><textarea id="agent-overlay-textarea" placeholder="Pega una URL de imagen" style="display:none;height:90px"></textarea></div><div class="modal-actions"><button class="cancel-btn" id="agent-overlay-cancel">Cancelar</button><button class="small-btn" id="agent-overlay-save">Guardar</button></div></div></div>
+
+<div class="overlay fine-overlay" id="fine-overlay">
+  <div class="modal glass">
+    <div class="fine-top"><div class="modal-title" style="margin:0">Añadir multa</div><div class="fine-close" id="close-fine">×</div></div>
+    <div class="fine-grid">
+      <div class="fine-left">
+        <div class="fine-title">Código criminal</div>
+        <input class="fine-search" id="fine-search-input" placeholder="Buscar en el código criminal...">
+        <div class="fine-table-wrap">
+          <div class="fine-table-head">
+            <table class="fine-table"><thead><tr><th class="fine-col-code">Código</th><th class="fine-col-desc">Descripción</th><th class="fine-col-amount center">Cantidad</th><th class="fine-col-sentence center">Sentencia</th><th class="fine-col-action center">Acción</th></tr></thead></table>
+          </div>
+          <div class="fine-table-scroll" id="fine-table-scroll">
+            <table class="fine-table"><tbody id="fine-code-body"></tbody></table>
+          </div>
+        </div>
+        <div class="fine-subtitle" style="margin-top:10px">Multa personalizada</div>
+        <div class="custom-row"><input id="custom-concept" placeholder="Concepto"><input id="custom-amount" placeholder="Cantidad"><input id="custom-sentence" placeholder="Sentencia"><button class="add-custom" id="add-custom-fine">Agregar</button></div>
+      </div>
+      <div class="fine-right">
+        <div class="fine-subtitle">Multas añadidas</div>
+        <div class="side-panel"><div class="side-section-title">Conceptos de multa</div><div id="selected-concepts"></div></div>
+        <div class="process-box"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>SENTENCIA TOTAL</span><span id="sentence-total">0 MESES</span></div><div style="display:flex;justify-content:space-between"><span>CANTIDAD TOTAL</span><span id="amount-total" style="color:#ff5b5b">0$</span></div><button class="confirm" id="confirm-fine">CONFIRMAR MULTA</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="radio-join-sound" preload="auto" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+
+<script>
+const AUTH_STORAGE_KEY='mvpd_auth';
+const DATA_STORAGE_KEY='mvpd_mdt_data_v1';
+const DISCORD_AUTH_URL='http://localhost:3000/auth/discord';
+const API_BASE='http://localhost:3000/api';
+const DEFAULT_AGENT_PHOTO='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80';
+
+const state={currentCitizenId:1,currentReportId:null,currentAgentId:513,fineDraft:[],currentScreen:'home',tabs:[{id:'home',label:'💙 Inicio',closable:false}],promptAction:null,agentAction:null,currentRadio:null,radioTalking:false,pendingAuthMode:null};
+
+const apiStatusEl=document.getElementById('api-status');
+const loginScreen=document.getElementById('login-screen');
+const appRoot=document.getElementById('app-root');
+const loginStatus=document.getElementById('login-status');
+const discordLoginBtn=document.getElementById('discord-login-btn');
+const continueLocalBtn=document.getElementById('continue-local-btn');
+const confirmBadgeBtn=document.getElementById('confirm-badge-btn');
+const badgeInput=document.getElementById('badge-input');
+const badgeStatus=document.getElementById('badge-status');
+const radioJoinSound=document.getElementById('radio-join-sound');
+
+let citizens=[
+  {id:1,firstName:'David',surname:'Wilson',gender:'Male',nationality:'United States',birth:'1997',citizenId:'IFX65811',phone:'6025920313',bank:'US08QBCore5421187226',job:'SAPD',photo:'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=500&q=80',wanted:false,dangerous:false,notes:[{title:'Sancion de trafico',text:'Se le aplico un 1/10 strike o su licencia de manejo por provar un choque',author:'DAVID WILSON (505)',date:'20/5/2024',time:'1:05'}],fines:[],licenses:[{type:'driver',expires:'31/12/2029 - 18:00'}],weapons:[]},
+  {id:2,firstName:'Aurora',surname:'Wesker',gender:'Female',nationality:'Ecuador',birth:'1998-06-18',citizenId:'BMZ61605',phone:'6025929238',bank:'US03QBCore7934910916',job:'LSPD',photo:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=80',wanted:true,dangerous:true,notes:[],fines:[{concept:'Exceso de velocidad de primer grado',amount:106,sentence:0,date:'20/5/2024'}],licenses:[{type:'arma',expires:'31/12/2029 - 18:00'}],weapons:['Pistola 9mm']}
+];
+
+const reports=[
+  {id:142,title:'TEST DE VIDEO',date:'19/5/2024 - 21:51',agent:'Alberto Ruiz (570)',location:'LIFEINVADER',description:`ROBO A TIENDA, TERMINA EN TIROS UN SOSPECHOSO ABATIDO Y UNO LOGRO ESCAPAR\n\nObjetos Incautados: Arma, Droga\n\npor terminar`,tags:['Drogas','Robo menor'],people:['Tuki Romero  TTFV3417'],victims:['David Wilson  IFX65811'],vehicles:['UNKNOWN  MATRICULA > DZW359'],evidence:[],accent:'pink'},
+  {id:141,title:'PARADA DE TRAFICO',date:'18/5/2024 - 23:42',agent:'Diego Zalas (840)',location:'Pillbox',description:'Parada rutinaria con cacheo positivo.',tags:['Arma'],people:['Diego Zalas  VYG36010'],victims:[],vehicles:['SULTAN  MATRICULA > WMX768'],evidence:['Pistola'],accent:'white'},
+  {id:140,title:'ROBO AMMUNATION',date:'18/5/2024 - 4:42',agent:'Hyun Ki (024)',location:'Ammunation',description:'Robo con sospechosos armados.',tags:['Arma'],people:['Hyun Ki  024'],victims:[],vehicles:[],evidence:[],accent:'pink'},
+  {id:139,title:'ROBO A TIENDA',date:'18/5/2024 - 4:05',agent:'Hyun Ki (024)',location:'Downtown',description:'Denuncia abierta.',tags:['Robo menor'],people:[],victims:[],vehicles:[],evidence:[],accent:'pink'}
+];
+
+const policeAgents=[
+  {id:146,firstName:'Abraham',surname:'Leon',gender:'Male',nationality:'United States',birth:'1995-03-10',citizenId:'ABR146',phone:'6025901111',bank:'US12QBCore1029384756',jurisdiction:'LSPD',rank:'Sargento II',badge:'146',photo:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80',notes:[],reportRefs:[],medals:[],divisions:[]},
+  {id:570,firstName:'Alberto',surname:'Ruiz',gender:'Male',nationality:'Spain',birth:'1994-08-14',citizenId:'ALB570',phone:'6025902222',bank:'US93QBCore5544332211',jurisdiction:'LSPD',rank:'Sargento II',badge:'570',photo:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',notes:[],reportRefs:[],medals:[],divisions:[]},
+  {id:264,firstName:'Alejandro',surname:'Mota',gender:'Male',nationality:'Mexico',birth:'1996-11-05',citizenId:'ALE264',phone:'6025903333',bank:'US22QBCore6655443322',jurisdiction:'LSPD',rank:'Oficial II',badge:'264',photo:'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=500&q=80',notes:[],reportRefs:[],medals:[],divisions:[]},
+  {id:0,firstName:'Aurelio',surname:'Silva',gender:'Male',nationality:'Spain',birth:'2000-01-01',citizenId:'AUR0000',phone:'6025900000',bank:'US77QBCore0000111122',jurisdiction:'LSPD',rank:'Cadete',badge:'0000',photo:'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=500&q=80',notes:[],reportRefs:[],medals:[],divisions:[]},
+  {id:513,firstName:'Aurora',surname:'Wesker',gender:'Female',nationality:'Ecuador',birth:'1998-06-18',citizenId:'BMZ61605',phone:'6025929238',bank:'US03QBCore7934910916',jurisdiction:'LSPD',rank:'Oficial I',badge:'513',photo:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=500&q=80',notes:[],reportRefs:[],medals:[],divisions:['Department of Corrections']},
+  {id:505,firstName:'David',surname:'Wilson',gender:'Male',nationality:'United States',birth:'1997',citizenId:'IFX65811',phone:'6025920313',bank:'US08QBCore5421187226',jurisdiction:'LSPD',rank:'Comisario',badge:'505',photo:'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=500&q=80',notes:[],reportRefs:[],medals:[],divisions:[]}
+];
+
+const criminalCode=[{ code:'1.1', article:'Conducción temeraria', description:'Agravante a cualquier infracción de tráfico que haga peligrar la vida de los viandantes provocando casi un accidente.', amount:5000, sentence:'Pérdida de 3 puntos del carné', extra:'Prevalece a 1.3, 1.4, 1.8, 1.12, 1.13, 1.15, 1.16, 1.17, 1.18, 1.19, 1.21, 1.22, 1.23, 1.24, 1.25' },
+  { code:'1.2', article:'Daños a la propiedad privada o pública', description:'Daños a propiedades privadas o públicas con vehículo o fuerza propia.', amount:2500, sentence:'Más valor de los daños' },
+  { code:'1.3', article:'Ignorar semáforos', description:'No respetar semáforos.', amount:400, sentence:'2 puntos del carné por cada semáforo ignorado' },
+  { code:'1.4', article:'Conducir en dirección contraria', description:'Conducir por dirección contraria a la de la vía.', amount:3000, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.5', article:'Conducir bajo efectos de sustancias alucinógenas', description:'Conducir bajo el efecto de sustancias ilícitas.', amount:2500, sentence:'Pérdida de 6 puntos del carné' },
+  { code:'1.6', article:'Posesión de elementos ilícitos en un vehículo', description:'Hallazgo de sustancias o armamento sin permiso en el interior del vehículo.', amount:0, sentence:'Depósito del vehículo e incautación del material' },
+  { code:'1.7', article:'Conducir bajo los efectos del alcohol', description:'Superar los límites legales de alcohol al volante.', amount:1500, sentence:'Pérdida de 6 puntos del carné' },
+  { code:'1.8', article:'Exceso de velocidad', description:'Superar los límites de velocidad vigentes.', amount:1200, sentence:'Pérdida de 2 puntos del carné' },
+  { code:'1.9', article:'Conducción sin licencia válida', description:'Conducir sin portar licencia válida o con licencia sin vigencia.', amount:4000, sentence:'Calabozos 10 meses' },
+  { code:'1.10', article:'Participación en carreras ilícitas', description:'Participar en carreras no autorizadas.', amount:6500, sentence:'Calabozos 10 meses + suspensión de la licencia' },
+  { code:'1.11', article:'Mal estacionamiento', description:'Vehículo mal estacionado o aparcado en zona prohibida.', amount:250, sentence:'—' },
+  { code:'1.12', article:'Obstrucción de tráfico', description:'Vehículo obstruyendo la circulación.', amount:500, sentence:'Depósito del vehículo' },
+  { code:'1.13', article:'No ceder paso a servicios de emergencia', description:'No apartarse ante vehículos de emergencia.', amount:300, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.14', article:'No portar elementos de seguridad', description:'No usar cinturón, casco o luces obligatorias.', amount:200, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.15', article:'Conducir vehículo en mal estado', description:'Circular con faltas técnicas o mecánicas.', amount:800, sentence:'Pérdida de 2 puntos del carné' },
+  { code:'1.16', article:'Arrojar objetos a la vía', description:'Arrojar objetos a la vía o inmediaciones.', amount:600, sentence:'—' },
+  { code:'1.17', article:'Ignorar señales de tránsito viales', description:'No respetar prioridad, stop o ceda el paso.', amount:500, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.18', article:'Adelantamientos indebidos', description:'Adelantar de forma peligrosa o prohibida.', amount:600, sentence:'Pérdida de 2 puntos del carné' },
+  { code:'1.19', article:'Dar media vuelta en la vía indebidamente', description:'Dar marcha atrás o media vuelta de forma no permitida.', amount:300, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.20', article:'Ignorar señales de los agentes', description:'Ignorar a un agente regulando tráfico.', amount:500, sentence:'Pérdida de 2 puntos del carné' },
+  { code:'1.21', article:'Conducir bajo distracción', description:'Uso de móvil, navegador, auriculares o similares al conducir.', amount:200, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.22', article:'Cambio de sentido erróneo', description:'Giro en U indebido.', amount:500, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.23', article:'Giro indebido', description:'Realizar giro prohibido o desde carril incorrecto.', amount:500, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.24', article:'Conducir por fuera de la calzada', description:'Circular por aceras, césped o arcenes.', amount:800, sentence:'Pérdida de 2 puntos del carné' },
+  { code:'1.25', article:'Uso indebido del claxon', description:'Uso indebido de elementos acústicos.', amount:200, sentence:'—' },
+  { code:'1.26', article:'Omisión del deber de socorro', description:'Huir de un accidente sin auxiliar o identificarte.', amount:2000, sentence:'—' },
+  { code:'1.27', article:'Ser un peligro para la circulación', description:'Accidente derivado de infracción de tráfico con heridos graves.', amount:7500, sentence:'Calabozos 15 meses + pérdida del carné' },
+  { code:'1.28', article:'No respetar normativas de vuelo', description:'Incumplir altura, velocidad o aterrizaje de helicópteros.', amount:3000, sentence:'Pérdida de la licencia de vuelo' },
+  { code:'1.29', article:'Uso de suspensión hidráulica', description:'Uso de suspensión hidráulica mientras se conduce.', amount:200, sentence:'Pérdida de 1 punto del carné' },
+  { code:'1.30', article:'Circular sin matrícula', description:'Circular sin matrícula visible.', amount:3500, sentence:'Calabozos 10 meses + depósito' },
+  { code:'1.31', article:'Pasos de peatones', description:'Cruzar fuera de zonas habilitadas.', amount:300, sentence:'—' },
+
+  { code:'2.1', article:'Disturbios en la vía pública', description:'Conflicto con agresión física o daños materiales.', amount:2200, sentence:'Calabozos 10 meses' },
+  { code:'2.2', article:'Agresión', description:'Agredir físicamente a otro individuo.', amount:3000, sentence:'Calabozos 12 meses + indemnización 4.000€-8.000€' },
+  { code:'2.3', article:'Agresión sexual', description:'Atentar contra la libertad sexual con violencia o intimidación.', amount:2500, sentence:'Cárcel 2 años + indemnización 4.000€-8.000€' },
+  { code:'2.4', article:'Alteración del orden público', description:'Actitud exaltada, gritos o alteración continuada.', amount:0, sentence:'Calabozos 5 meses' },
+  { code:'2.5', article:'Prostitución en la vía pública', description:'Ofrecer o contratar favores sexuales en vía pública.', amount:1000, sentence:'—' },
+  { code:'2.6', article:'Comercialización ilegal', description:'Venta de servicios o productos sin permisos.', amount:1000, sentence:'Calabozos 10 meses + incautación' },
+  { code:'2.7', article:'Conducta desenfrenada', description:'Incentivar a una multitud a la violencia o al desorden.', amount:5000, sentence:'Calabozos 10 meses' },
+  { code:'2.8', article:'Inducir al delito', description:'Forzar, engañar o chantajear a alguien para delinquir.', amount:0, sentence:'Calabozos 12 meses' },
+  { code:'2.9', article:'Implicación en organización ilegal', description:'Participar directa o indirectamente en actividades ilegales en grupo.', amount:0, sentence:'Calabozos 30 meses' },
+  { code:'2.10', article:'Intento de violación', description:'Intentar forzar actos sexuales.', amount:0, sentence:'Calabozos 30 meses' },
+  { code:'2.11', article:'Intento de violación a menor', description:'Intentar forzar actos sexuales a menor de edad.', amount:0, sentence:'Calabozos 40 meses' },
+  { code:'2.12', article:'Violación', description:'Forzar actos sexuales.', amount:0, sentence:'Calabozos 40 meses' },
+  { code:'2.13', article:'Violación a menor', description:'Forzar actos sexuales a menor.', amount:0, sentence:'Calabozos 50 meses' },
+  { code:'2.14', article:'Abuso de menores', description:'Aprovecharse de un menor para cualquier objetivo.', amount:3000, sentence:'Calabozos 45 meses' },
+  { code:'2.15', article:'Racismo', description:'Menospreciar o agredir verbalmente por condición étnica.', amount:1000, sentence:'—' },
+  { code:'2.16', article:'Suplantación de identidad', description:'Hacerse pasar por otra persona.', amount:1000, sentence:'Calabozos 15 meses' },
+  { code:'2.17', article:'Acoso psicológico', description:'Perseguir o molestar de forma insistente.', amount:1000, sentence:'Calabozos 20 meses' },
+  { code:'2.18', article:'Maltrato singular', description:'Lesión o menoscabo psíquico en contexto de pareja o convivencia vulnerable.', amount:2500, sentence:'Calabozos 22 meses + indemnización 5.000€-10.000€' },
+  { code:'2.19', article:'Trata de blancas', description:'Comerciar con seres humanos.', amount:5000, sentence:'Cárcel 1 año' },
+
+  { code:'3.1', article:'Allanamiento de morada', description:'Entrar en propiedad privada sin consentimiento.', amount:3000, sentence:'Calabozos 10 meses' },
+  { code:'3.2', article:'Usurpación', description:'Apoderarse con violencia o intimidación de inmueble o derecho ajeno.', amount:6000, sentence:'Calabozos 25 meses + indemnización' },
+  { code:'3.3', article:'Hurto', description:'Apropiación no violenta de bienes ajenos.', amount:1000, sentence:'Calabozos 10 meses + devolución/compensación' },
+  { code:'3.4', article:'Asalto a mano armada con arma blanca', description:'Asaltar usando arma blanca, puños u objeto contundente.', amount:4000, sentence:'Calabozos 20 meses + devolución/compensación' },
+  { code:'3.5', article:'Asalto a mano armada con arma de fuego', description:'Asaltar usando armas de fuego.', amount:6000, sentence:'Cárcel 3 años + devolución/compensación' },
+  { code:'3.6', article:'Asalto con arma de utilería', description:'Intimidar con arma réplica o inutilizada.', amount:4000, sentence:'Calabozos 15 meses + devolución/compensación' },
+  { code:'3.7', article:'Robo de vehículo con fuerza', description:'Robo de vehículo con ocupantes usando fuerza o armas.', amount:6000, sentence:'Calabozos 20 meses + devolución del vehículo' },
+  { code:'3.8', article:'Hurto de vehículo', description:'Robar vehículo sin violencia usando medios como ganzúas.', amount:3500, sentence:'Calabozos 15 meses + devolución del vehículo' },
+  { code:'3.9', article:'Daños a propiedad privada o estatal', description:'Daños a instalaciones públicas o recintos privados.', amount:3000, sentence:'Calabozos 10 meses + indemnización' },
+
+  { code:'4.1', article:'Posesión ilegal de armas', description:'Poseer armas sin salvoconducto.', amount:0, sentence:'Calabozos 15 meses + incautación del arma' },
+  { code:'4.2', article:'Posesión de armas ilícitas con intención de contrabando', description:'Dos armas o más sin salvoconducto.', amount:4000, sentence:'Calabozos 15 meses + multa por armas + incautación' },
+  { code:'4.3', article:'Tráfico de armas', description:'Intercambio de armamento ilícito.', amount:12000, sentence:'Calabozos 30 meses + incautación' },
+  { code:'4.4', article:'Mostrar arma en público sin salvoconducto', description:'Desenfundar arma en vía pública sin licencia.', amount:0, sentence:'Calabozos 20 meses + incautación' },
+  { code:'4.5', article:'Mostrar arma en público con salvoconducto', description:'Desenfundar arma en público sin justificación válida.', amount:0, sentence:'Calabozos 10 meses + suspensión de licencia' },
+  { code:'4.6', article:'Compra de armas ilícitas', description:'Comprar armamento ilícito.', amount:0, sentence:'Calabozos 20 meses + incautación' },
+
+  { code:'5.1', article:'Posesión de sustancias ilícitas con intención de contrabando', description:'Posesión de narcóticos o cantidades superiores a las permitidas.', amount:0, sentence:'Calabozos 10 meses + agravantes por cantidad' },
+  { code:'5.2', article:'Tráfico de drogas', description:'Ser evidenciado traficando drogas.', amount:8000, sentence:'Calabozos 15 meses + incautación' },
+  { code:'5.3', article:'Compra de sustancias ilícitas', description:'Comprar sustancias ilícitas.', amount:0, sentence:'Calabozos 10 meses + incautación' },
+  { code:'5.4', article:'Consumo de sustancias ilícitas', description:'Consumir drogas en vía pública o locales de atención al cliente.', amount:1500, sentence:'Incautación + posible calabozo 10 meses' },
+
+  { code:'6.1', article:'Intento de homicidio sin armas', description:'Dejar a alguien en crítico mediante agresión física continuada.', amount:0, sentence:'Calabozos 30 meses' },
+  { code:'6.2', article:'Intento de homicidio a mano armada', description:'Intentar atentar contra la vida con armas.', amount:0, sentence:'Calabozos 30 meses' },
+  { code:'6.3', article:'Homicidio sin armas', description:'Causar la muerte sin armas.', amount:0, sentence:'Calabozos 40 meses a cárcel 16 años' },
+  { code:'6.4', article:'Homicidio a mano armada', description:'Causar la muerte con arma blanca o de fuego.', amount:0, sentence:'Cárcel 40 años' },
+  { code:'6.5', article:'Homicidio múltiple', description:'Asesinar a dos o más personas.', amount:195000, sentence:'Por víctima + cadena perpetua' },
+  { code:'6.6', article:'Secuestro', description:'Retener a alguien contra su voluntad con amenazas.', amount:0, sentence:'Calabozos 30 meses a cárcel 1 año' },
+  { code:'6.7', article:'Extorsión', description:'Amenazar o forzar para obtener algo.', amount:14000, sentence:'Calabozos 30 meses a cárcel 1 año' },
+  { code:'6.8', article:'Extorsión a negocios/empresas/entidades', description:'Extorsión contra responsable de negocio o entidad.', amount:16000, sentence:'Calabozos 30 meses a cárcel 1 año' },
+
+  { code:'7.1', article:'Falsificación de documentos', description:'Crear o vender documentos falsificados.', amount:10000, sentence:'Calabozos 25 meses' },
+  { code:'7.2', article:'Posesión de documento falso', description:'Portar documento falsificado.', amount:1000, sentence:'Calabozos 10 meses' },
+  { code:'7.3', article:'Transitar indocumentado', description:'No portar documento de identidad.', amount:500, sentence:'Traslado a comisaría para verificación' },
+  { code:'7.4', article:'Pescar sin salvoconducto', description:'Pescar sin permiso o en lugar no autorizado.', amount:2000, sentence:'—' },
+  { code:'7.5', article:'Cazar sin salvoconducto', description:'Cazar sin permiso.', amount:2500, sentence:'—' },
+  { code:'7.6', article:'Estafa', description:'Engaño con ánimo de lucro en perjuicio ajeno.', amount:5000, sentence:'Más indemnización' },
+
+  { code:'8.1', article:'Desobediencia a la justicia', description:'Desobedecer orden legítima de agente o autoridad.', amount:2000, sentence:'—' },
+  { code:'8.2', article:'Falso reporte de bomba', description:'Dar falsa información sobre bomba.', amount:10000, sentence:'Calabozo' },
+  { code:'8.3', article:'Allanamiento de edificios públicos', description:'Entrar en área restringida estatal sin autorización.', amount:4000, sentence:'Expulsión del área' },
+  { code:'8.4', article:'Uso indebido de la línea de emergencias', description:'Bromas o llamadas falsas.', amount:1000, sentence:'—' },
+  { code:'8.5', article:'Robo de elementos estatales', description:'Sustraer material estatal con fuerza o intimidación.', amount:8000, sentence:'Calabozos 45 meses' },
+  { code:'8.6', article:'Hurto de elementos estatales', description:'Sustraer material estatal sin fuerza.', amount:6250, sentence:'Calabozos 45 meses' },
+  { code:'8.7', article:'Robo de armamento estatal', description:'Sustraer armamento estatal con fuerza o intimidación.', amount:10000, sentence:'Cárcel 1 año' },
+  { code:'8.8', article:'Hurto de armamento estatal', description:'Sustraer armamento estatal sin fuerza.', amount:7500, sentence:'Cárcel 1 año' },
+  { code:'8.9', article:'Suplantación de identidad de funcionario', description:'Suplantar a miembro del estado.', amount:15000, sentence:'Calabozos 30 meses' },
+  { code:'8.10', article:'Resistirse al arresto', description:'Presentar resistencia al arresto.', amount:1000, sentence:'—' },
+  { code:'8.11', article:'Evadir un arresto', description:'Fugarse a pie.', amount:4000, sentence:'Calabozos 10 meses' },
+  { code:'8.12', article:'Huir de la justicia', description:'Fugarse en vehículo.', amount:7500, sentence:'Calabozos 15 meses' },
+  { code:'8.13', article:'Soborno', description:'Corromper a funcionario público con dinero.', amount:5000, sentence:'Calabozos 35 meses + incautación' },
+  { code:'8.14', article:'Intento de soborno', description:'Intentar corromper a funcionario público.', amount:2500, sentence:'Calabozos 20 meses' },
+  { code:'8.15', article:'Intento de homicidio sin armas a funcionario', description:'Atentar contra la vida de funcionario público sin armas.', amount:0, sentence:'Cárcel 30 meses' },
+  { code:'8.16', article:'Intento de homicidio a mano armada a funcionario', description:'Atentar contra la vida de funcionario público con armas.', amount:0, sentence:'Cárcel 30 meses a 1 año' },
+  { code:'8.17', article:'Homicidio sin armas a funcionario', description:'Matar a funcionario público sin armas.', amount:0, sentence:'Cárcel 1 año' },
+  { code:'8.18', article:'Homicidio a mano armada a funcionario', description:'Matar a funcionario público con armas.', amount:11000, sentence:'Cárcel 1 a 2 años' },
+  { code:'8.19', article:'Terrorismo', description:'Actos terroristas contra ciudadanía o Estado.', amount:500000, sentence:'Cadena perpetua / posible pena de muerte' },
+  { code:'8.20', article:'Agresión a cargo público', description:'Atentar contra la integridad de funcionario público.', amount:0, sentence:'Cárcel 1 año' },
+
+  { code:'9.1', article:'Prevaricación administrativa', description:'Funcionario dicta resolución arbitraria a sabiendas.', amount:0, sentence:'Inhabilitación 1 mes tiempo real' },
+  { code:'9.2', article:'Nombramiento ilegal de cargo público', description:'Nombrar a persona sin requisitos legales.', amount:100000, sentence:'Suspensión 1 mes tiempo real' },
+  { code:'9.3', article:'Abandono de destino', description:'Abandonar destino para no impedir o perseguir delitos.', amount:0, sentence:'Prisión 1 a 2 años + inhabilitación 1 mes tiempo real' },
+  { code:'9.4', article:'Omisión del deber de perseguir delitos', description:'No promover intencionadamente la persecución de delitos.', amount:0, sentence:'Inhabilitación 1 mes tiempo real' },
+  { code:'9.5', article:'Abandono colectivo ilegal de servicio público', description:'Promover u organizar abandono ilegal de servicio público.', amount:400000, sentence:'Suspensión 1 mes tiempo real' },
+  { code:'9.7.1', article:'Desobediencia de funcionario a orden superior', description:'Negarse a cumplir resoluciones u órdenes legales.', amount:50000, sentence:'Inhabilitación 1 semana a 1 mes tiempo real' },
+  { code:'9.10', article:'Infidelidad en custodia de documentos', description:'Sustraer, destruir u ocultar documentos custodiados.', amount:100000, sentence:'Prisión 1 a 2 años + inhabilitación 1 semana a 1 mes' },
+  { code:'9.13.1', article:'Revelación de secretos', description:'Funcionario revela secretos o informaciones no divulgables.', amount:50000, sentence:'Inhabilitación 1 a 2 semanas tiempo real' },
+  { code:'9.15', article:'Cohecho grave', description:'Recibir dádiva para realizar acto contrario al deber.', amount:400000, sentence:'Prisión 1 a 2 años + inhabilitación 1 mes tiempo real' },
+  { code:'9.22', article:'Malversación', description:'Sustraer o consentir sustracción de caudales públicos.', amount:0, sentence:'Prisión 1 a 2 años + inhabilitación 6 meses a 1 año tiempo real' },
+
+  { code:'10.1', article:'Prevaricación judicial', description:'Juez o magistrado dicta resolución injusta a sabiendas.', amount:200000, sentence:'Prisión 1 a 2 años + inhabilitación 1 mes tiempo real' },
+  { code:'10.5', article:'Encubrimiento', description:'Ayudar a beneficiarse, ocultar pruebas o facilitar huida tras delito.', amount:0, sentence:'Prisión 1 a 2 años' },
+  { code:'10.6', article:'Acusación y denuncia falsa', description:'Imputar falsamente hechos delictivos.', amount:50000, sentence:'Prisión 1 a 2 años o multa' },
+  { code:'10.8', article:'Falso testimonio', description:'Faltar a la verdad como testigo.', amount:100000, sentence:'Prisión 2 años' },
+  { code:'10.10.1', article:'Incomparecencia judicial', description:'No comparecer ante juzgado en proceso criminal.', amount:50000, sentence:'Prisión 2 años o multa' },
+  { code:'10.12', article:'Obstrucción a la justicia con violencia', description:'Influir mediante violencia o intimidación en denunciante, testigo o parte.', amount:50000, sentence:'Prisión 2 años' },
+  { code:'10.16', article:'Incumplir sentencia judicial', description:'No cumplir orden o sentencia dictada por juez.', amount:500000, sentence:'Inhabilitación 1 a 4 semanas tiempo real' },
+  { code:'10.17', article:'Quebrantamiento de condena', description:'Quebrantar condena o pena impuesta.', amount:200000, sentence:'Prisión 2 años o multa según caso' },
+  { code:'10.21', article:'Uso de recursos públicos para delinquir', description:'Funcionario usa medios de su cargo para cometer delito.', amount:100000, sentence:'Prisión 2 años + inhabilitación 1 mes tiempo real' },
+
+  { code:'11.1', article:'Violación a la privacidad en línea', description:'Vulnerar la privacidad de otra persona por medios online.', amount:2000, sentence:'Calabozos 20 meses' },
+  { code:'11.2', article:'Comercio ilegal en línea', description:'Traficar con material ilícito por vías informáticas.', amount:10000, sentence:'Calabozos 25 meses' },
+  { code:'11.3', article:'Fraude bancario', description:'Falsificar documentos o medios bancarios para beneficio propio.', amount:5000, sentence:'Calabozos 30 meses + incautación' },
+  { code:'11.4', article:'Pornografía infantil', description:'Comerciar o poseer contenido pornográfico con menores.', amount:3000, sentence:'Calabozos 35 meses + incautación' },
+  { code:'11.5', article:'Posesión de archivos confidenciales', description:'Filtrar, comerciar o poseer contenido confidencial extraído de agencias.', amount:100000, sentence:'Cadena perpetua / posible pena de muerte' },
+  { code:'11.6', article:'Hackeo a instituciones públicas', description:'Vulnerar instituciones o webs públicas para extraer información o vulnerar sistemas.', amount:500000, sentence:'Cadena perpetua' }
+];
+
+const radioGroups=[
+  {title:'South Units',className:'',channels:[{name:'ADAM-10',users:[{name:'John Week',badge:'420',role:'Boss LSPD',local:false,speaking:false}]},{name:'ADAM-20',users:[]},{name:'ADAM-30',users:[]},{name:'ADAM-40',users:[]},{name:'ADAM-50',users:[]},{name:'MARY-1',users:[]},{name:'MARY-2',users:[]},{name:'MARY-3',users:[]},{name:'UNION-10',users:[]},{name:'UNION-20',users:[]},{name:'UNION-30',users:[]},{name:'KING-10',users:[]},{name:'KING-20',users:[]},{name:'TOM-1',users:[]},{name:'PEGASUS-10',users:[]}]},
+  {title:'North Units',className:'',channels:[{name:'ALPHA-10',users:[]},{name:'ALPHA-20',users:[]},{name:'ALPHA-30',users:[]},{name:'ALPHA-40',users:[]},{name:'ALPHA-50',users:[]},{name:'MIKE-1',users:[]},{name:'MIKE-2',users:[]},{name:'MIKE-3',users:[]},{name:'BRAVO-10',users:[]},{name:'BRAVO-20',users:[]},{name:'BRAVO-30',users:[]},{name:'CHARLIE-10',users:[]},{name:'CHARLIE-20',users:[]},{name:'FOXTROT-10',users:[]},{name:'EAGLE-10',users:[]}]},
+  {title:'Special Units',className:'',channels:[{name:'DISPATCH',users:[]},{name:'POLICE STATION',users:[]},{name:'AWAITING ASSIGNMENT',users:[]},{name:'TAC-01',users:[]},{name:'TAC-02',users:[]},{name:'TAC-03',users:[]},{name:'TAC-04',users:[]},{name:'DAVID-10',users:[]},{name:'DAVID-20',users:[]},{name:'DAVID-50',users:[]},{name:'K9 UNIT',users:[]},{name:'IAA OFFICE',users:[]},{name:'INVESTIGATION OFFICE',users:[]}]},
+  {title:'EMS Units',className:'ems',channels:[{name:'SAFD COMMAND',users:[]},{name:'FIRE UNIT 1',users:[]},{name:'FIRE UNIT 2',users:[]},{name:'FIRE UNIT 3',users:[]},{name:'EMS UNIT 1',users:[]},{name:'EMS UNIT 2',users:[]},{name:'EMS UNIT 3',users:[]},{name:'HOSPITAL',users:[]},{name:'FIRE STATION',users:[]}]}
+];
+
+const $=id=>document.getElementById(id);
+
+const homeScreen=$('home-screen'),searchScreen=$('search-screen'),reportsScreen=$('reports-screen'),agentsScreen=$('agents-screen'),radioScreen=$('radio-screen'),tabs=$('tabs');
+const openSearch=$('open-search'),openReports=$('open-reports'),openAgents=$('open-agents'),openFineModal=$('open-fines'),openRadio=$('open-radio');
+const citizenList=$('citizen-list'),citizenSearchInput=$('citizen-search'),doSearch=$('do-search'),noteView=$('note-view'),noteForm=$('note-form'),newNoteBtn=$('new-note-btn'),cancelNote=$('cancel-note'),saveNote=$('save-note'),noteTitleInput=$('note-title-input'),noteTextInput=$('note-text-input'),wantedToggle=$('wanted-toggle'),dangerToggle=$('danger-toggle'),uploadCitizenPhoto=$('upload-citizen-photo'),setCitizenPhotoUrl=$('set-citizen-photo-url'),citizenPhotoInput=$('citizen-photo-input');
+const reportSearch=$('report-search'),reportTagFilter=$('report-tag-filter'),reportList=$('report-list'),reportEmpty=$('report-empty'),reportDetail=$('report-detail'),newReportBtn=$('new-report-btn'),repDescription=$('rep-description'),repNameInput=$('rep-name-input'),repAgentSelect=$('rep-agent-select'),repLocationInput=$('rep-location-input');
+const licenseOverlay=$('license-overlay'),openLicenseModal=$('open-license-modal'),closeLicense=$('close-license');
+const fineOverlay=$('fine-overlay'),openFineModal2=$('open-fine-modal-2'),closeFine=$('close-fine'),fineCodeBody=$('fine-code-body'),selectedConcepts=$('selected-concepts'),sentenceTotal=$('sentence-total'),amountTotal=$('amount-total'),fineSearchInput=$('fine-search-input'),addCustomFine=$('add-custom-fine'),customConcept=$('custom-concept'),customAmount=$('custom-amount'),customSentence=$('custom-sentence'),confirmFine=$('confirm-fine'),fineTableScroll=$('fine-table-scroll');
+const promptOverlay=$('prompt-overlay'),promptTitle=$('prompt-title'),promptInput1=$('prompt-input-1'),promptInput2=$('prompt-input-2'),promptInput3=$('prompt-input-3'),promptCancel=$('prompt-cancel'),promptSave=$('prompt-save');
+const agentList=$('agent-list'),agentSearch=$('agent-search'),doAgentSearch=$('do-agent-search'),agentEmpty=$('agent-empty'),agentDetail=$('agent-detail'),agentPhoto=$('agent-photo'),agentName=$('agent-name'),agentSurname=$('agent-surname'),agentGender=$('agent-gender'),agentNationality=$('agent-nationality'),agentBirth=$('agent-birth'),agentIdField=$('agent-id'),agentPhone=$('agent-phone'),agentBank=$('agent-bank'),agentJurisdiction=$('agent-jurisdiction'),agentRank=$('agent-rank'),agentBadge=$('agent-badge'),agentNoteView=$('agent-note-view'),agentNoteForm=$('agent-note-form'),newAgentNoteBtn=$('new-agent-note-btn'),cancelAgentNote=$('cancel-agent-note'),saveAgentNote=$('save-agent-note'),agentNoteTitleInput=$('agent-note-title-input'),agentNoteTextInput=$('agent-note-text-input'),agentReportsList=$('agent-reports-list'),agentMedalsList=$('agent-medals-list'),agentDivisionsList=$('agent-divisions-list'),addMedalBtn=$('add-medal-btn'),addDivisionBtn=$('add-division-btn'),newAgentBtn=$('new-agent-btn'),generateBadgeBtn=$('generate-badge-btn');
+const agentOverlay=$('agent-overlay'),agentOverlayTitle=$('agent-overlay-title'),agentOverlayInput1=$('agent-overlay-input-1'),agentOverlayInput2=$('agent-overlay-input-2'),agentOverlaySelect=$('agent-overlay-select'),agentOverlaySelect2=$('agent-overlay-select-2'),agentOverlayTextarea=$('agent-overlay-textarea'),agentOverlayCancel=$('agent-overlay-cancel'),agentOverlaySave=$('agent-overlay-save');
+const editAgentRank=$('edit-agent-rank'),editAgentJurisdiction=$('edit-agent-jurisdiction'),editAgentBadge=$('edit-agent-badge'),generateBadgeInline=$('generate-badge-inline'),uploadAgentPhoto=$('upload-agent-photo'),setAgentPhotoUrl=$('set-agent-photo-url'),agentPhotoInput=$('agent-photo-input'),agentJurisdictionEdit=$('agent-jurisdiction-edit'),fireAgentBtn=$('fire-agent-btn');
+const radioGrid=$('radio-grid'),radioCurrentBanner=$('radio-current-banner');
+
+let fineFilteredData=[];let fineStartIndex=0;const FINE_VISIBLE_ROWS=12;const FINE_ROW_HEIGHT=74;
+
+const currentCitizen=()=>citizens.find(c=>c.id===state.currentCitizenId)||citizens[0]||null;
+const currentReport=()=>reports.find(r=>r.id===state.currentReportId)||null;
+const currentAgent=()=>policeAgents.find(a=>a.id===state.currentAgentId)||null;
+
+function setApiStatus(text,isWarn=false){apiStatusEl.textContent=text;apiStatusEl.className=`status-bar${isWarn?' warn':''}`}
+
+function saveLocalData(){try{localStorage.setItem(DATA_STORAGE_KEY,JSON.stringify({citizens,reports,policeAgents}))}catch(error){console.warn('No se pudo guardar en localStorage:',error)}}
+
+function loadLocalData(){
+  try{
+    const raw=localStorage.getItem(DATA_STORAGE_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(Array.isArray(data.citizens)) citizens=data.citizens.map(normalizeCitizen);
+    if(Array.isArray(data.reports)){reports.length=0;data.reports.forEach(item=>reports.push(item))}
+    if(Array.isArray(data.policeAgents)){policeAgents.length=0;data.policeAgents.forEach(item=>policeAgents.push(item))}
+    if(citizens.length && !citizens.some(c=>c.id===state.currentCitizenId)) state.currentCitizenId=citizens[0].id;
+    if(policeAgents.length && !policeAgents.some(a=>a.id===state.currentAgentId)) state.currentAgentId=policeAgents[0].id;
+  }catch(error){console.warn('No se pudo cargar localStorage:',error)}
+}
+
+function loadExtraLocalData(){
+  try{
+    const rawReports=localStorage.getItem('mvpd_reports_v1');
+    if(rawReports){
+      const parsed=JSON.parse(rawReports);
+      if(Array.isArray(parsed)){reports.length=0;parsed.forEach(item=>reports.push(item))}
+    }
+  }catch(error){console.warn('No se pudieron cargar denuncias locales:',error)}
+  try{
+    const rawAgents=localStorage.getItem('mvpd_agents_v1');
+    if(rawAgents){
+      const parsed=JSON.parse(rawAgents);
+      if(Array.isArray(parsed)){policeAgents.length=0;parsed.forEach(item=>policeAgents.push(item))}
+    }
+  }catch(error){console.warn('No se pudieron cargar agentes locales:',error)}
+}
+
+function markAuthenticated(mode='local'){try{localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({ok:true,mode,at:Date.now()}))}catch(error){console.warn(error)}}
+function showApp(){loginScreen.style.display='none';appRoot.style.display='block'}
+function hideApp(){loginScreen.style.display='flex';appRoot.style.display='none'}
+
+function tryDiscordTokenFromUrl(){
+  const params=new URLSearchParams(window.location.search);
+  const token=params.get('token')||params.get('jwt')||params.get('auth');
+  if(token){
+    state.pendingAuthMode='discord';
+    const cleanUrl=window.location.pathname+window.location.hash;
+    window.history.replaceState({},document.title,cleanUrl);
+    return true;
+  }
+  return false;
+}
+
+function normalizeCitizen(raw){
+  return{id:raw.id??Date.now(),firstName:raw.firstName??'',surname:raw.surname??'',gender:raw.gender??'Unknown',nationality:raw.nationality??'Unknown',birth:raw.birth??'',citizenId:raw.citizenId??'',phone:raw.phone??'',bank:raw.bank??'',job:raw.job??'Civil',photo:raw.photo||DEFAULT_AGENT_PHOTO,wanted:Boolean(raw.wanted),dangerous:Boolean(raw.dangerous),notes:Array.isArray(raw.notes)?raw.notes:[],fines:Array.isArray(raw.fines)?raw.fines:[],licenses:Array.isArray(raw.licenses)?raw.licenses:[],weapons:Array.isArray(raw.weapons)?raw.weapons:[]}
+}
+
+async function loadCitizensFromApi(){
+  try{
+    const response=await fetch(`${API_BASE}/citizens`,{headers:{Accept:'application/json'}});
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    if(!Array.isArray(data)) throw new Error('La API no devolvió una lista');
+    citizens=data.map(normalizeCitizen);
+    if(!citizens.length) state.currentCitizenId=null;
+    else if(!citizens.some(c=>c.id===state.currentCitizenId)) state.currentCitizenId=citizens[0].id;
+    setApiStatus('API conectada. Ciudadanos sincronizados.');
+    renderCitizenList();renderCitizenProfile();
+    return true;
+  }catch(error){
+    console.warn('Error cargando ciudadanos desde la API:',error);
+    setApiStatus('No se pudo conectar con la API. Se muestran ciudadanos locales.',true);
+    renderCitizenList();renderCitizenProfile();
+    return false;
+  }
+}
+
+async function createCitizenInApi(citizen){
+  const response=await fetch(`${API_BASE}/citizens`,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(citizen)});
+  if(!response.ok){const text=await response.text();throw new Error(text||`HTTP ${response.status}`)}
+  return response.json();
+}
+
+async function saveCitizenToApi(citizen){
+  if(!citizen||!citizen.id) return;
+  try{
+    const response=await fetch(`${API_BASE}/citizens/${citizen.id}`,{method:'PUT',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(citizen)});
+    if(!response.ok){const text=await response.text();throw new Error(text||`HTTP ${response.status}`)}
+    saveLocalData();
+  }catch(error){console.warn('No se pudo guardar el ciudadano en la API:',error);saveLocalData()}
+}
+
+async function saveAllDataToApi(){
+  try{
+    localStorage.setItem('mvpd_reports_v1',JSON.stringify(reports));
+    localStorage.setItem('mvpd_agents_v1',JSON.stringify(policeAgents));
+  }catch(error){console.warn('No se pudo guardar reports/agentes en localStorage:',error)}
+  saveLocalData();
+}
+
+setInterval(()=>{saveLocalData()},2000);
+
+function ensureTab(id,label){if(!state.tabs.find(t=>t.id===id))state.tabs.unshift({id,label,closable:true})}
+function switchScreen(id){
+  [homeScreen,searchScreen,reportsScreen,agentsScreen,radioScreen].forEach(s=>s.classList.remove('active'));
+  if(id==='home')homeScreen.classList.add('active');
+  if(id==='citizens')searchScreen.classList.add('active');
+  if(id==='reports')reportsScreen.classList.add('active');
+  if(id==='agents')agentsScreen.classList.add('active');
+  if(id==='radio')radioScreen.classList.add('active');
+  state.currentScreen=id;setTabs();
+}
+
+function setTabs(){
+  tabs.innerHTML=state.tabs.map(tab=>`<div class="tab ${tab.id===state.currentScreen?'active':''}" data-tab="${tab.id}"><span>${tab.label}</span>${tab.closable?`<span class="tab-close" data-close="${tab.id}">✕</span>`:''}</div>`).join('');
+  tabs.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.dataset.close)return;
+    const id=el.dataset.tab;
+    if(id==='home')switchScreen('home');
+    if(id==='citizens')openCitizenScreen();
+    if(id==='reports')openReportsScreen();
+    if(id==='agents')openAgentsScreen();
+    if(id==='radio')openRadioScreen();
+  }));
+  tabs.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation();
+    const id=el.dataset.close;
+    state.tabs=state.tabs.filter(t=>t.id!==id);
+    if(state.currentScreen===id)switchScreen('home');else setTabs();
+  }));
+}
+
+function openCitizenScreen(){ensureTab('citizens','Ciudadanos');switchScreen('citizens');renderCitizenList();renderCitizenProfile()}
+function openReportsScreen(){ensureTab('reports','Denuncias');switchScreen('reports');renderReportFilters();renderReportList();renderReportDetail()}
+function openAgentsScreen(){ensureTab('agents','Gestión de agentes');switchScreen('agents');renderAgentList();renderAgentDetail()}
+function openRadioScreen(){ensureTab('radio','Radio');switchScreen('radio');renderRadioScreen()}
+
+function setToggleUI(container,value){container.querySelectorAll('button').forEach(btn=>btn.classList.toggle('active',(btn.dataset.value==='true')===value))}
+function getAgentLabel(agent){return `${agent.firstName} ${agent.surname} (${agent.badge})`}
+function syncAgentReports(){for(const agent of policeAgents){agent.reportRefs=reports.filter(r=>r.agent===getAgentLabel(agent)).map(r=>`${r.title} #${r.id}`)}}
+function getCitizenReports(citizen){if(!citizen)return[];const full=`${citizen.firstName} ${citizen.surname}`.toLowerCase();return reports.filter(r=>{const blob=[...(r.people||[]),...(r.victims||[])].join(' | ').toLowerCase();return blob.includes(citizen.citizenId.toLowerCase())||blob.includes(full)})}
+
+function renderCitizenList(){
+  const q=(citizenSearchInput.value||'').trim().toLowerCase();
+  const filtered=citizens.filter(c=>`${c.firstName} ${c.surname} ${c.citizenId} ${c.phone}`.toLowerCase().includes(q));
+  citizenList.innerHTML=filtered.map(c=>`<div class="citizen-item ${c.id===state.currentCitizenId?'active':''}" data-id="${c.id}"><div class="citizen-thumb" style="background-image:url('${c.photo}')"></div><div><div class="citizen-name">${c.firstName.toUpperCase()} ${c.surname.toUpperCase()}</div><div class="citizen-meta"><span>🪪 ${c.citizenId}</span><span>📞 ${c.phone}</span></div></div></div>`).join('')||'<div class="muted-empty">No hay resultados</div>';
+  citizenList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>{state.currentCitizenId=Number(el.dataset.id);renderCitizenList();renderCitizenProfile()}));
+}
+
+function renderCitizenProfile(){
+  const c=currentCitizen();
+  if(!c){
+    $('citizen-photo').style.backgroundImage='none';$('field-name').textContent='';$('field-surname').textContent='';$('field-gender').textContent='';$('field-nationality').textContent='';$('field-birth').textContent='';$('field-id').textContent='';$('field-phone').textContent='';$('field-bank').textContent='';$('field-job').textContent='';$('note-view').innerHTML='<div class="muted-empty">No hay ciudadanos</div>';$('fine-list').innerHTML='<div class="muted-empty">No hay ciudadanos</div>';$('complaint-list').innerHTML='<div class="muted-empty">No hay ciudadanos</div>';$('license-list').innerHTML='<div class="muted-empty">No hay ciudadanos</div>';$('weapons-list').innerHTML='<div class="muted-empty">No hay ciudadanos</div>';return;
+  }
+  $('citizen-photo').style.backgroundImage=`url('${c.photo}')`;$('field-name').textContent=c.firstName;$('field-surname').textContent=c.surname;$('field-gender').textContent=c.gender;$('field-nationality').textContent=c.nationality;$('field-birth').textContent=c.birth;$('field-id').textContent=c.citizenId;$('field-phone').textContent=c.phone;$('field-bank').textContent=c.bank;$('field-job').textContent=c.job;setToggleUI(wantedToggle,c.wanted);setToggleUI(dangerToggle,c.dangerous);renderNotes();renderFines();renderCitizenComplaints();renderLicenses();renderWeapons();
+}
+
+function renderNotes(){
+  const c=currentCitizen();
+  if(!c){noteView.innerHTML='<div class="muted-empty">No hay ciudadanos</div>';return}
+  noteView.innerHTML=c.notes.length?c.notes.map((n,i)=>`<div class="note-card"><button class="item-remove" data-rn="${i}">✕</button><div class="note-title">${n.title}</div><div class="note-sub">${n.text}</div><div class="note-footer"><span>👤 ${n.author||''}</span><span>📅 ${n.date||''}</span><span>🕒 ${n.time||''}</span></div></div>`).join(''):'<div class="muted-empty">NO HAY NOTAS REGISTRADAS</div>';
+  noteView.querySelectorAll('[data-rn]').forEach(b=>b.addEventListener('click',()=>{c.notes.splice(Number(b.dataset.rn),1);saveCitizenToApi(c);renderNotes()}));
+}
+
+function renderFines(){
+  const c=currentCitizen(),list=$('fine-list');
+  if(!c){list.innerHTML='<div class="muted-empty">No hay ciudadanos</div>';return}
+  list.innerHTML=c.fines.length?c.fines.map((f,i)=>`<div class="note-card"><button class="item-remove" data-rf="${i}">✕</button><div class="note-title">${f.date||''} - ${f.amount}$</div><div class="note-sub">• ${f.concept}${f.sentence?`<br>• ${f.sentence}`:''}</div><div class="note-footer"><span>👤 ${c.firstName.toUpperCase()} ${c.surname.toUpperCase()} (${c.citizenId})</span></div></div>`).join(''):'<div class="muted-empty">No hay multas registradas</div>';
+  list.querySelectorAll('[data-rf]').forEach(b=>b.addEventListener('click',()=>{c.fines.splice(Number(b.dataset.rf),1);saveCitizenToApi(c);renderFines()}));
+}
+
+function renderCitizenComplaints(){
+  const c=currentCitizen(),list=$('complaint-list');
+  if(!c){list.innerHTML='<div class="muted-empty">No hay ciudadanos</div>';return}
+  const associated=getCitizenReports(c);
+  list.innerHTML=associated.length?associated.map(r=>`<div class="note-card" style="min-height:auto;padding:8px 10px;"><div class="tag-pill">${r.title} #${r.id}</div></div>`).join(''):'<div class="muted-empty">No hay denuncias asociadas</div>';
+}
+
+function renderLicenses(){
+  const c=currentCitizen(),list=$('license-list');
+  if(!c){list.innerHTML='<div class="muted-empty">No hay ciudadanos</div>';return}
+  list.innerHTML=c.licenses.length?c.licenses.map((item,i)=>`<div class="license-card" style="position:relative;"><button class="item-remove" data-rl="${i}">✕</button><div style="font-size:14px;margin-bottom:4px">${item.type}</div><div style="font-size:12px;color:#c8d6e4">Vencimiento: ${item.expires}</div></div>`).join(''):'<div class="muted-empty">No hay licencias</div>';
+  list.querySelectorAll('[data-rl]').forEach(b=>b.addEventListener('click',()=>{c.licenses.splice(Number(b.dataset.rl),1);saveCitizenToApi(c);renderLicenses()}));
+}
+
+function renderWeapons(){const c=currentCitizen();$('weapons-list').innerHTML=c&&c.weapons.length?c.weapons.map(w=>`<div class="license-card">${w}</div>`).join(''):`<div class="muted-empty">${c?'No hay datos disponibles':'No hay ciudadanos'}</div>`}
+function getFineSentenceText(item){if(item.sentence===undefined||item.sentence===null||item.sentence==='') return '—';return String(item.sentence)}
+function buildFineRow(item, realIndex){return `<tr class="virtual-row"><td class="fine-col-code"><strong>${item.code || '—'}</strong><br><span style="opacity:.8">${item.article}</span></td><td class="fine-col-desc">${item.description || 'Sin descripción'}</td><td class="fine-col-amount center">${Number(item.amount || 0)}$</td><td class="fine-col-sentence center">${getFineSentenceText(item)}</td><td class="fine-col-action center"><button class="add-btn" data-fine-add="${realIndex}">AGREGAR</button></td></tr>`}
+
+function mountFineRowEvents(){fineCodeBody.querySelectorAll('[data-fine-add]').forEach(btn=>{btn.addEventListener('click',()=>{const index=Number(btn.dataset.fineAdd);const item=fineFilteredData[index];if(!item) return;state.fineDraft.push({code:item.code,article:item.article,description:item.description,amount:Number(item.amount||0),sentence:item.sentence});renderFineDraft()})})}
+
+function drawVirtualFineRows(){
+  const total=fineFilteredData.length;
+  if(total===0){fineCodeBody.innerHTML=`<tr><td colspan="5"><div class="muted-empty">No se encontraron cargos</div></td></tr>`;return}
+  const visibleCount=Math.min(FINE_VISIBLE_ROWS,total),maxStart=Math.max(0,total-visibleCount);
+  if(fineStartIndex>maxStart) fineStartIndex=maxStart;
+  if(fineStartIndex<0) fineStartIndex=0;
+  const topSpacerHeight=fineStartIndex*FINE_ROW_HEIGHT,endIndex=Math.min(total,fineStartIndex+visibleCount),bottomSpacerHeight=Math.max(0,(total-endIndex)*FINE_ROW_HEIGHT),visibleRows=[];
+  for(let i=fineStartIndex;i<endIndex;i++) visibleRows.push(buildFineRow(fineFilteredData[i],i));
+  fineCodeBody.innerHTML=`${topSpacerHeight>0?`<tr><td colspan="5" style="height:${topSpacerHeight}px;padding:0;border:none;background:transparent"></td></tr>`:''}${visibleRows.join('')}${bottomSpacerHeight>0?`<tr><td colspan="5" style="height:${bottomSpacerHeight}px;padding:0;border:none;background:transparent"></td></tr>`:''}`;
+  mountFineRowEvents();
+}
+
+function renderFineTable(resetScroll=true){
+  const q=fineSearchInput.value.trim().toLowerCase();
+  fineFilteredData=criminalCode.filter(item=>`${item.code} ${item.article} ${item.description}`.toLowerCase().includes(q));
+  fineStartIndex=0;drawVirtualFineRows();if(resetScroll&&fineTableScroll) fineTableScroll.scrollTop=0;
+}
+
+function renderFineDraft(){
+  selectedConcepts.innerHTML=state.fineDraft.length?state.fineDraft.map((item,i)=>`<div class="concept-chip"><span><strong>${item.code || 'PERS'}</strong> · ${item.article} · ${Number(item.amount || 0)}$</span><button data-remove="${i}">✕</button></div>`).join(''):'<div class="muted-empty">Sin conceptos añadidos</div>';
+  selectedConcepts.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{state.fineDraft.splice(Number(btn.dataset.remove),1);renderFineDraft()}));
+  const totalAmount=state.fineDraft.reduce((sum,item)=>sum+Number(item.amount||0),0),totalSentenceText=state.fineDraft.map(item=>item.sentence).filter(Boolean).join(' + ');
+  amountTotal.textContent=`${totalAmount}$`;sentenceTotal.textContent=totalSentenceText||'0 MESES';
+}
+
+function openFine(){fineOverlay.classList.add('active');renderFineTable(true);renderFineDraft()}
+
+function renderReportFilters(){
+  const tags=[...new Set(reports.flatMap(r=>r.tags))];
+  reportTagFilter.innerHTML='<option value="">Todos los tags</option>'+tags.map(t=>`<option>${t}</option>`).join('');
+  repAgentSelect.innerHTML='<option value="">Selecciona un agente</option>'+policeAgents.map(a=>`<option value="${getAgentLabel(a)}">${getAgentLabel(a)}</option>`).join('');
+}
+
+function renderReportList(){
+  const q=reportSearch.value.trim().toLowerCase(),filterTag=reportTagFilter.value;
+  const filtered=reports.filter(r=>`${r.title} ${r.agent} ${r.location} ${r.id}`.toLowerCase().includes(q)&&(!filterTag||r.tags.includes(filterTag)));
+  reportList.innerHTML=filtered.map(r=>`<div class="report-list-item ${r.accent==='pink'?'pink':'white'} ${r.id===state.currentReportId?'active':''}" data-report-id="${r.id}"><div class="report-item-title">📄 ${r.title} #${r.id}</div><div class="report-meta"><span>👤 ${r.agent||'Sin agente'}</span><span>📅 ${r.date}</span></div></div>`).join('')||'<div class="muted-empty">No hay denuncias</div>';
+  reportList.querySelectorAll('[data-report-id]').forEach(el=>el.addEventListener('click',()=>{state.currentReportId=Number(el.dataset.reportId);renderReportList();renderReportDetail()}));
+}
+
+function renderReportDetail(){
+  const r=currentReport();
+  if(!r){reportEmpty.style.display='flex';reportDetail.style.display='none';return}
+  reportEmpty.style.display='none';reportDetail.style.display='block';repNameInput.value=r.title;$('rep-id').textContent='#'+r.id;$('rep-date').textContent=r.date;repAgentSelect.value=r.agent||'';repLocationInput.value=r.location||'';repDescription.value=r.description;
+  $('rep-evidence-list').innerHTML=r.evidence.length?r.evidence.map((e,i)=>`<div class="report-row-chip"><span>${e}</span><button class="item-remove" data-rr="evidence:${i}">✕</button></div>`).join(''):'<div class="muted-empty">Sin evidencias</div>';
+  $('rep-people-list').innerHTML=r.people.length?r.people.map((e,i)=>`<div class="report-row-chip"><span>${e}</span><button class="item-remove" data-rr="people:${i}">✕</button></div>`).join(''):'<div class="muted-empty">Sin personas</div>';
+  $('rep-victims-list').innerHTML=r.victims.length?r.victims.map((e,i)=>`<div class="report-row-chip"><span>${e}</span><button class="item-remove" data-rr="victims:${i}">✕</button></div>`).join(''):'<div class="muted-empty">Sin víctimas</div>';
+  $('rep-vehicles-list').innerHTML=r.vehicles.length?r.vehicles.map((e,i)=>`<div class="report-row-chip"><span>${e}</span><button class="item-remove" data-rr="vehicles:${i}">✕</button></div>`).join(''):'<div class="muted-empty">Sin vehículos</div>';
+  $('rep-tags').innerHTML=r.tags.length?r.tags.map((t,i)=>`<div class="tag-pill">${t} <button data-rr="tags:${i}" style="margin-left:8px;border:none;background:none;cursor:pointer">✕</button></div>`).join(''):'<div class="muted-empty">Sin tags</div>';
+  document.querySelectorAll('[data-rr]').forEach(btn=>btn.addEventListener('click',()=>{const [key,idx]=btn.dataset.rr.split(':');currentReport()[key].splice(Number(idx),1);syncAgentReports();saveAllDataToApi();renderReportDetail();renderReportFilters();renderReportList();renderAgentDetail();renderCitizenComplaints()}));
+}
+
+function renderAgentList(){
+  const q=agentSearch.value.trim().toLowerCase();
+  const filtered=policeAgents.filter(a=>`${a.firstName} ${a.surname} ${a.badge} ${a.rank}`.toLowerCase().includes(q));
+  agentList.innerHTML=filtered.map(a=>`<div class="agent-item ${a.id===state.currentAgentId?'active':''}" data-agent-id="${a.id}"><div class="agent-thumb" style="background-image:url('${a.photo}')"></div><div><div class="citizen-name" style="font-size:20px">${a.firstName.toUpperCase()} ${a.surname.toUpperCase()}</div><div class="tag-pill" style="margin:6px 0 6px 0;background:#4f8cc8;color:#fff">${a.rank.toUpperCase()}</div><div class="agent-meta"><span>🪪 ${a.badge}</span></div></div></div>`).join('')||'<div class="muted-empty">No hay agentes</div>';
+  agentList.querySelectorAll('[data-agent-id]').forEach(el=>el.addEventListener('click',()=>{state.currentAgentId=Number(el.dataset.agentId);renderAgentList();renderAgentDetail();updateHeaderAgent()}));
+}
+
+function renderAgentDetail(){
+  syncAgentReports();
+  const a=currentAgent();
+  if(!a){agentEmpty.style.display='flex';agentDetail.style.display='none';return}
+  agentEmpty.style.display='none';agentDetail.style.display='block';agentPhoto.style.backgroundImage=`url('${a.photo||DEFAULT_AGENT_PHOTO}')`;agentName.textContent=a.firstName;agentSurname.textContent=a.surname;agentGender.textContent=a.gender;agentNationality.textContent=a.nationality;agentBirth.textContent=a.birth;agentIdField.textContent=a.citizenId;agentPhone.textContent=a.phone;agentBank.textContent=a.bank;agentJurisdiction.textContent=a.jurisdiction;agentJurisdictionEdit.textContent=a.jurisdiction;agentRank.textContent=a.rank.toUpperCase();agentBadge.textContent=a.badge;
+  agentNoteView.innerHTML=a.notes.length?a.notes.map((n,i)=>`<div class="note-card"><button class="item-remove" data-ran="${i}">✕</button><div class="note-title">${n.title}</div><div class="note-sub">${n.text}</div><div class="note-footer"><span>📅 ${n.date}</span></div></div>`).join(''):'<div class="muted-empty">No hay datos disponibles</div>';
+  agentReportsList.innerHTML=a.reportRefs.length?a.reportRefs.map(r=>`<div class="tag-pill">${r}</div>`).join(''):'<div class="muted-empty">No hay informes</div>';
+  agentMedalsList.innerHTML=a.medals.length?a.medals.map((m,i)=>`<div class="report-row-chip"><span>${m}</span><button class="item-remove" data-ram="${i}">✕</button></div>`).join(''):'<div class="muted-empty">NO HAY CONDECORACIONES</div>';
+  agentDivisionsList.innerHTML=a.divisions.length?a.divisions.map((d,i)=>`<div class="report-row-chip"><span>${d}</span><button class="item-remove" data-rad="${i}">✕</button></div>`).join(''):'<div class="muted-empty">NO HAY DIVISIONES</div>';
+  agentNoteView.querySelectorAll('[data-ran]').forEach(b=>b.addEventListener('click',()=>{a.notes.splice(Number(b.dataset.ran),1);saveAllDataToApi();renderAgentDetail()}));
+  agentMedalsList.querySelectorAll('[data-ram]').forEach(b=>b.addEventListener('click',()=>{a.medals.splice(Number(b.dataset.ram),1);saveAllDataToApi();renderAgentDetail()}));
+  agentDivisionsList.querySelectorAll('[data-rad]').forEach(b=>b.addEventListener('click',()=>{a.divisions.splice(Number(b.dataset.rad),1);saveAllDataToApi();renderAgentDetail()}));
+}
+
+function openPrompt(title,action,showThird=false){state.promptAction=action;promptTitle.textContent=title;promptInput1.value='';promptInput2.value='';promptInput3.value='';promptInput3.style.display=showThird?'block':'none';promptOverlay.classList.add('active')}
+function openAgentOverlay(title,action,options={}){state.agentAction=action;agentOverlayTitle.textContent=title;agentOverlayInput1.value='';agentOverlayInput2.value='';agentOverlaySelect.value='';agentOverlaySelect2.value='';agentOverlayTextarea.value='';agentOverlayInput1.placeholder=options.placeholder1||'Texto';agentOverlayInput2.placeholder=options.placeholder2||'Dato extra';agentOverlayInput1.style.display=options.showInput1===false?'none':'block';agentOverlayInput2.style.display=options.showInput2?'block':'none';agentOverlaySelect.style.display=options.showRank?'block':'none';agentOverlaySelect2.style.display=options.showJurisdiction?'block':'none';agentOverlayTextarea.style.display=options.showTextarea?'block':'none';agentOverlay.classList.add('active')}
+
+function getLocalRadioUser(){
+  const a=currentAgent();
+  if(a){return{name:`${a.firstName} ${a.surname}`,badge:a.badge,role:a.rank,local:true,speaking:state.radioTalking}}
+  return{name:'Usuario',badge:'000',role:'Sin rol',local:true,speaking:state.radioTalking}
+}
+
+function updateRadioBanner(){
+  if(state.currentRadio){
+    radioCurrentBanner.innerHTML=`<small>EN RADIO</small>🟢 ${state.currentRadio}${state.radioTalking?'<div style="font-size:10px;margin-top:4px">🎤 HABLANDO</div>':''}<button class="radio-disconnect-btn" onclick="leaveCurrentRadio()">SALIR</button>`;
+  }else{
+    radioCurrentBanner.innerHTML=`<small>DESCONECTADO</small>🔴 SIN RADIO`;
+  }
+}
+
+function leaveCurrentRadio(render=true){
+  if(!state.currentRadio) return;
+  for(const group of radioGroups){for(const channel of group.channels){if(channel.name===state.currentRadio){channel.users=channel.users.filter(user=>!user.local)}}}
+  state.currentRadio=null;state.radioTalking=false;updateRadioBanner();if(render) renderRadioScreen();
+}
+window.leaveCurrentRadio=leaveCurrentRadio;
+
+function joinRadioChannel(channelName){
+  leaveCurrentRadio(false);state.currentRadio=channelName;
+  if(radioJoinSound){radioJoinSound.currentTime=0;radioJoinSound.play().catch(()=>{})}
+  for(const group of radioGroups){for(const channel of group.channels){if(channel.name===channelName){channel.users.unshift(getLocalRadioUser())}}}
+  updateRadioBanner();renderRadioScreen();
+}
+
+function toggleLocalSpeaking(forceValue=null){
+  if(!state.currentRadio) return;
+  state.radioTalking=forceValue===null?!state.radioTalking:forceValue;
+  for(const group of radioGroups){for(const channel of group.channels){if(channel.name===state.currentRadio){channel.users=channel.users.map(user=>user.local?{...user,speaking:state.radioTalking}:user)}}}
+  updateRadioBanner();renderRadioScreen();
+}
+
+function renderRadioScreen(){
+  updateRadioBanner();
+  radioGrid.innerHTML=radioGroups.map(group=>`<div class="radio-column ${group.className || ''}"><div class="radio-column-title">${group.title}</div><div class="radio-list">${group.channels.map(channel=>{const isActive=channel.name===state.currentRadio;const hasUsers=channel.users.length>0;const currentUsers=channel.users.length;return `<div class="radio-channel ${isActive ? 'active open' : ''}"><div class="radio-channel-head" data-radio-join="${channel.name}"><div class="radio-channel-left"><span class="radio-channel-name">${channel.name} (${currentUsers})</span></div><div class="radio-channel-right"><span class="radio-count">${channel.users.length}</span><span class="radio-arrow">⌃</span></div></div><div class="radio-users">${hasUsers?channel.users.map(user=>`<div class="radio-user"><div class="radio-user-left"><span class="radio-user-dot"></span><span class="radio-user-name">${user.name} (${user.badge})</span>${user.role ? `<span class="radio-user-badge">${user.role}</span>` : ''}</div><div>${user.speaking ? `<span class="radio-speaking">Talking</span>` : ''}</div></div>`).join(''):`<div class="radio-empty">Sin usuarios conectados</div>`}</div></div>`}).join('')}</div></div>`).join('');
+  radioGrid.querySelectorAll('[data-radio-join]').forEach(btn=>btn.addEventListener('click',()=>joinRadioChannel(btn.dataset.radioJoin)));
+}
+
+function applyCardMotion(selector){
+  document.querySelectorAll(selector).forEach(card=>{
+    card.addEventListener('mousemove',e=>{
+      const rect=card.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top,centerX=rect.width/2,centerY=rect.height/2,rotateY=((x-centerX)/centerX)*7,rotateX=((centerY-y)/centerY)*7;
+      card.style.transform=`perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px) scale(1.02)`;
+    });
+    card.addEventListener('mouseleave',()=>{card.style.transform='perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0) scale(1)'});
+  });
+}
+
+function updateHeaderAgent(){
+  const a=currentAgent();
+  const el=document.getElementById('agent-name-header');
+  if(!el) return;
+  if(!a){el.textContent='En servicio';return}
+  el.textContent=`${a.firstName} ${a.surname} (${a.badge})`;
+}
+
+function showBadgeStep(mode){
+  state.pendingAuthMode=mode;
+  document.getElementById('login-step-1').style.display='none';
+  document.getElementById('login-step-2').style.display='block';
+  badgeInput.value='';
+  badgeStatus.textContent=`Verificación ${mode==='discord'?'con Discord':'local'} completada. Introduce tu número de placa.`;
+  badgeInput.focus();
+}
+
+function confirmBadgeLogin(){
+  const badge=badgeInput.value.trim();
+  if(!badge){badgeStatus.textContent='❌ Introduce tu número de placa';return}
+  const agent=policeAgents.find(a=>String(a.badge)===badge);
+  if(!agent){badgeStatus.textContent='❌ No existe ningún agente con esa placa';return}
+  state.currentAgentId=agent.id;
+  const mode=state.pendingAuthMode||'local';
+  markAuthenticated(mode);
+  showApp();
+  updateHeaderAgent();
+  setApiStatus(`Conectado como ${agent.firstName} ${agent.surname}${mode==='discord'?' · Discord verificado':''}`);
+  loadCitizensFromApi();
+}
+
+openSearch.addEventListener('click',openCitizenScreen);
+openReports.addEventListener('click',openReportsScreen);
+openAgents.addEventListener('click',openAgentsScreen);
+openRadio.addEventListener('click',openRadioScreen);
+doSearch.addEventListener('click',renderCitizenList);
+citizenSearchInput.addEventListener('input',renderCitizenList);
+reportSearch.addEventListener('input',renderReportList);
+reportTagFilter.addEventListener('change',renderReportList);
+[wantedToggle,dangerToggle].forEach((toggle,idx)=>toggle.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{const c=currentCitizen();if(!c)return;const value=btn.dataset.value==='true';if(idx===0)c.wanted=value;else c.dangerous=value;saveCitizenToApi(c);renderCitizenProfile()})));
+
+newNoteBtn.addEventListener('click',()=>{noteView.style.display='none';noteForm.style.display='block'});
+cancelNote.addEventListener('click',()=>{noteForm.style.display='none';noteView.style.display='block';noteTitleInput.value='';noteTextInput.value=''});
+saveNote.addEventListener('click',()=>{const c=currentCitizen(),title=noteTitleInput.value.trim(),text=noteTextInput.value.trim();if(!c||!title||!text)return;const now=new Date();c.notes.unshift({title,text,author:`${c.firstName.toUpperCase()} ${c.surname.toUpperCase()} (${c.citizenId})`,date:now.toLocaleDateString('es-ES'),time:now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})});noteTitleInput.value='';noteTextInput.value='';noteForm.style.display='none';noteView.style.display='block';saveCitizenToApi(c);renderNotes()});
+
+openLicenseModal.addEventListener('click',()=>licenseOverlay.classList.add('active'));
+closeLicense.addEventListener('click',()=>licenseOverlay.classList.remove('active'));
+licenseOverlay.addEventListener('click',e=>{if(e.target===licenseOverlay)licenseOverlay.classList.remove('active')});
+document.querySelectorAll('.license-option').forEach(option=>option.addEventListener('click',()=>{const c=currentCitizen();if(!c)return;const map={negocio:'negocio',conductor:'driver',arma:'arma'};c.licenses.push({type:map[option.dataset.license],expires:'31/12/2029 - 18:00'});saveCitizenToApi(c);renderLicenses();licenseOverlay.classList.remove('active')}));
+
+openFineModal.addEventListener('click',openFine);
+openFineModal2.addEventListener('click',openFine);
+closeFine.addEventListener('click',()=>fineOverlay.classList.remove('active'));
+fineOverlay.addEventListener('click',e=>{if(e.target===fineOverlay)fineOverlay.classList.remove('active')});
+fineSearchInput.addEventListener('input',renderFineTable);
+if(fineTableScroll){fineTableScroll.addEventListener('scroll',()=>{const nextIndex=Math.floor(fineTableScroll.scrollTop/FINE_ROW_HEIGHT);if(nextIndex!==fineStartIndex){fineStartIndex=nextIndex;drawVirtualFineRows()}})}
+addCustomFine.addEventListener('click',()=>{const concept=customConcept.value.trim(),amount=Number(customAmount.value||0),sentence=customSentence.value.trim();if(!concept||!amount) return;state.fineDraft.push({code:'PERS',article:concept,description:concept,amount,sentence});customConcept.value='';customAmount.value='';customSentence.value='';renderFineDraft()});
+confirmFine.addEventListener('click',()=>{const c=currentCitizen();if(!c||!state.fineDraft.length) return;const today=new Date().toLocaleDateString('es-ES');state.fineDraft.forEach(item=>{c.fines.unshift({concept:`${item.code || 'PERS'} - ${item.article}`,amount:item.amount,sentence:item.sentence,date:today})});state.fineDraft=[];saveCitizenToApi(c);renderFineDraft();renderFines();fineOverlay.classList.remove('active')});
+
+newReportBtn.addEventListener('click',()=>{const id=(reports[0]?.id||140)+1;reports.unshift({id,title:'NUEVA DENUNCIA',date:new Date().toLocaleDateString('es-ES')+' - '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),agent:'',location:'',description:'',tags:[],people:[],victims:[],vehicles:[],evidence:[],accent:'white'});state.currentReportId=id;syncAgentReports();saveAllDataToApi();renderReportFilters();renderReportList();renderReportDetail();renderCitizenComplaints();renderAgentDetail()});
+repDescription.addEventListener('input',()=>{const r=currentReport();if(r){r.description=repDescription.value;saveAllDataToApi()}});
+repNameInput.addEventListener('input',()=>{const r=currentReport();if(!r)return;r.title=repNameInput.value||'SIN NOMBRE';syncAgentReports();saveAllDataToApi();renderReportList();renderReportDetail();renderCitizenComplaints();renderAgentDetail()});
+repLocationInput.addEventListener('input',()=>{const r=currentReport();if(!r)return;r.location=repLocationInput.value;saveAllDataToApi();renderReportList()});
+repAgentSelect.addEventListener('change',()=>{const r=currentReport();if(!r)return;r.agent=repAgentSelect.value;syncAgentReports();saveAllDataToApi();renderReportList();renderAgentDetail()});
+$('add-evidence-btn').addEventListener('click',()=>openPrompt('Añadir evidencia','evidence'));
+$('add-person-btn').addEventListener('click',()=>openPrompt('Añadir persona','people'));
+$('add-victim-btn').addEventListener('click',()=>openPrompt('Añadir víctima','victims'));
+$('add-vehicle-btn').addEventListener('click',()=>openPrompt('Añadir vehículo','vehicles'));
+$('add-tag-btn').addEventListener('click',()=>{const r=currentReport(),tag=$('tag-select').value;if(!r||!tag||r.tags.includes(tag))return;r.tags.push(tag);syncAgentReports();saveAllDataToApi();renderReportFilters();renderReportList();renderReportDetail();renderCitizenComplaints();renderAgentDetail()});
+$('delete-report-btn').addEventListener('click',()=>{if(!currentReport())return;const idx=reports.findIndex(r=>r.id===state.currentReportId);if(idx>=0)reports.splice(idx,1);state.currentReportId=reports[0]?.id||null;syncAgentReports();saveAllDataToApi();renderReportFilters();renderReportList();renderReportDetail();renderCitizenComplaints();renderAgentDetail()});
+
+promptCancel.addEventListener('click',()=>promptOverlay.classList.remove('active'));
+promptOverlay.addEventListener('click',e=>{if(e.target===promptOverlay)promptOverlay.classList.remove('active')});
+promptSave.addEventListener('click',()=>{if(state.promptAction==='citizenPhotoUrl'){const c=currentCitizen(),value=promptInput1.value.trim();if(!c||!value)return;c.photo=value;saveCitizenToApi(c);promptOverlay.classList.remove('active');renderCitizenList();renderCitizenProfile();return}const r=currentReport();if(!r||!state.promptAction)return;const a=promptInput1.value.trim(),b=promptInput2.value.trim(),c=promptInput3.value.trim();if(!a)return;let text=a;if(b)text+='  '+b;if(c)text+=' - '+c;r[state.promptAction].push(text);promptOverlay.classList.remove('active');syncAgentReports();saveAllDataToApi();renderReportDetail();renderCitizenComplaints();renderAgentDetail()});
+
+if(uploadCitizenPhoto) uploadCitizenPhoto.addEventListener('click',()=>citizenPhotoInput.click());
+if(citizenPhotoInput) citizenPhotoInput.addEventListener('change',e=>{const file=e.target.files&&e.target.files[0],c=currentCitizen();if(!file||!c)return;const reader=new FileReader();reader.onload=()=>{c.photo=String(reader.result);saveCitizenToApi(c);renderCitizenList();renderCitizenProfile()};reader.readAsDataURL(file);e.target.value=''});
+if(setCitizenPhotoUrl) setCitizenPhotoUrl.addEventListener('click',()=>openPrompt('Poner foto del ciudadano por URL','citizenPhotoUrl'));
+
+newAgentNoteBtn.addEventListener('click',()=>{agentNoteView.style.display='none';agentNoteForm.style.display='block'});
+cancelAgentNote.addEventListener('click',()=>{agentNoteForm.style.display='none';agentNoteView.style.display='block';agentNoteTitleInput.value='';agentNoteTextInput.value=''});
+saveAgentNote.addEventListener('click',()=>{const a=currentAgent(),title=agentNoteTitleInput.value.trim(),text=agentNoteTextInput.value.trim();if(!a||!title||!text)return;a.notes.unshift({title,text,date:new Date().toLocaleDateString('es-ES')});agentNoteTitleInput.value='';agentNoteTextInput.value='';agentNoteForm.style.display='none';agentNoteView.style.display='block';saveAllDataToApi();renderAgentDetail()});
+addMedalBtn.addEventListener('click',()=>openAgentOverlay('Añadir medalla','medal'));
+addDivisionBtn.addEventListener('click',()=>openAgentOverlay('Establecer división','division'));
+newAgentBtn.addEventListener('click',()=>openAgentOverlay('Añadir policía','newAgent',{placeholder1:'Nombre',placeholder2:'Apellidos',showInput1:true,showInput2:true,showRank:true,showJurisdiction:true,showTextarea:true}));
+generateBadgeBtn.addEventListener('click',()=>openAgentOverlay('Generar placa','badge',{placeholder1:'Número de placa',showInput1:true}));
+if(generateBadgeInline) generateBadgeInline.addEventListener('click',()=>openAgentOverlay('Generar placa','badge',{placeholder1:'Número de placa',showInput1:true}));
+if(editAgentRank) editAgentRank.addEventListener('click',()=>openAgentOverlay('Cambiar rango','changeRank',{showInput1:false,showRank:true}));
+if(editAgentJurisdiction) editAgentJurisdiction.addEventListener('click',()=>openAgentOverlay('Cambiar jurisdicción','changeJurisdiction',{showInput1:false,showJurisdiction:true}));
+if(editAgentBadge) editAgentBadge.addEventListener('click',()=>openAgentOverlay('Cambiar número de placa','changeBadge',{placeholder1:'Número de placa',showInput1:true}));
+if(setAgentPhotoUrl) setAgentPhotoUrl.addEventListener('click',()=>openAgentOverlay('Poner foto por URL','photoUrl',{placeholder1:'URL de la imagen',showInput1:true}));
+if(uploadAgentPhoto) uploadAgentPhoto.addEventListener('click',()=>agentPhotoInput.click());
+if(agentPhotoInput) agentPhotoInput.addEventListener('change',e=>{const file=e.target.files&&e.target.files[0],a=currentAgent();if(!file||!a)return;const reader=new FileReader();reader.onload=()=>{a.photo=String(reader.result);saveAllDataToApi();renderAgentList();renderAgentDetail()};reader.readAsDataURL(file);e.target.value=''});
+if(fireAgentBtn) fireAgentBtn.addEventListener('click',()=>{const a=currentAgent();if(!a)return;const idx=policeAgents.findIndex(x=>x.id===a.id);if(idx<0)return;policeAgents.splice(idx,1);state.currentAgentId=policeAgents[0]?.id??null;saveAllDataToApi();renderAgentList();renderAgentDetail();renderReportFilters();renderReportDetail();updateHeaderAgent()});
+doAgentSearch.addEventListener('click',renderAgentList);
+agentSearch.addEventListener('input',renderAgentList);
+
+agentOverlayCancel.addEventListener('click',()=>agentOverlay.classList.remove('active'));
+agentOverlay.addEventListener('click',e=>{if(e.target===agentOverlay)agentOverlay.classList.remove('active')});
+agentOverlaySave.addEventListener('click',()=>{
+  const a=currentAgent();
+  if(state.agentAction==='medal'&&a){const value=agentOverlayInput1.value.trim();if(!value)return;a.medals.push(value);saveAllDataToApi();renderAgentDetail()}
+  if(state.agentAction==='division'&&a){const value=agentOverlayInput1.value.trim();if(!value)return;a.divisions.push(value);saveAllDataToApi();renderAgentDetail()}
+  if(state.agentAction==='badge'&&a){const value=agentOverlayInput1.value.trim()||String(Math.floor(100+Math.random()*900));a.badge=value;saveAllDataToApi();renderAgentList();renderAgentDetail();renderReportFilters();updateHeaderAgent()}
+  if(state.agentAction==='changeBadge'&&a){const value=agentOverlayInput1.value.trim();if(!value)return;a.badge=value;saveAllDataToApi();renderAgentList();renderAgentDetail();renderReportFilters();updateHeaderAgent()}
+  if(state.agentAction==='changeRank'&&a){const value=agentOverlaySelect.value;if(!value)return;a.rank=value;saveAllDataToApi();renderAgentList();renderAgentDetail()}
+  if(state.agentAction==='changeJurisdiction'&&a){const value=agentOverlaySelect2.value;if(!value)return;a.jurisdiction=value;saveAllDataToApi();renderAgentList();renderAgentDetail()}
+  if(state.agentAction==='photoUrl'&&a){const value=agentOverlayInput1.value.trim();if(!value)return;a.photo=value;saveAllDataToApi();renderAgentList();renderAgentDetail()}
+  if(state.agentAction==='newAgent'){
+    const firstName=agentOverlayInput1.value.trim(),surname=agentOverlayInput2.value.trim(),rank=agentOverlaySelect.value||'Cadete',jurisdiction=agentOverlaySelect2.value||'LSPD',photo=agentOverlayTextarea.value.trim()||DEFAULT_AGENT_PHOTO;
+    if(!firstName||!surname)return;
+    const badge=String(Math.floor(100+Math.random()*900));
+    const payload={firstName,surname,gender:'Male',nationality:'Unknown',birth:'2000-01-01',citizenId:'AGT'+badge,phone:'0000000000',bank:'US00QBCore0000000000',job:'Civil',photo,wanted:false,dangerous:false,notes:[],fines:[],licenses:[],weapons:[]};
+    createCitizenInApi(payload).then(()=>loadCitizensFromApi()).catch(error=>{console.warn('Error creando ciudadano en la API:',error);setApiStatus('No se pudo crear en la API. Se mantiene el modo local.',true)});
+    const newId=Date.now();
+    policeAgents.unshift({id:newId,firstName,surname,gender:'Male',nationality:'Unknown',birth:'2000-01-01',citizenId:'AGT'+badge,phone:'0000000000',bank:'US00QBCore0000000000',jurisdiction,rank,badge,photo,notes:[],reportRefs:[],medals:[],divisions:[]});
+    state.currentAgentId=newId;saveAllDataToApi();renderAgentList();renderAgentDetail();renderReportFilters();updateHeaderAgent();
+  }
+  agentOverlay.classList.remove('active');
+});
+
+window.addEventListener('keydown',e=>{if(e.code==='KeyN' && !state.radioTalking){toggleLocalSpeaking(true)}});
+window.addEventListener('keyup',e=>{if(e.code==='KeyN'){toggleLocalSpeaking(false)}});
+badgeInput.addEventListener('keydown',e=>{if(e.key==='Enter') confirmBadgeLogin()});
+
+function initApp(){
+  loadLocalData();loadExtraLocalData();syncAgentReports();setTabs();renderCitizenList();renderCitizenProfile();renderReportFilters();renderReportList();renderReportDetail();renderAgentList();renderAgentDetail();renderRadioScreen();applyCardMotion('.tile');applyCardMotion('.box');updateHeaderAgent();
+}
+
+function checkAuthAndStart(){
+  const cameFromDiscord=tryDiscordTokenFromUrl();
+  let savedAuth=null;
+  try{savedAuth=JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)||'null')}catch(error){savedAuth=null}
+  initApp();
+  if(cameFromDiscord){hideApp();showBadgeStep('discord');return}
+  if(savedAuth && savedAuth.ok){hideApp();showBadgeStep(savedAuth.mode||'local');return}
+  hideApp();document.getElementById('login-step-1').style.display='block';document.getElementById('login-step-2').style.display='none';loginStatus.textContent='Selecciona cómo quieres entrar.';
+}
+
+discordLoginBtn.addEventListener('click',()=>{showBadgeStep('discord')});
+continueLocalBtn.addEventListener('click',()=>{showBadgeStep('local')});
+confirmBadgeBtn.addEventListener('click',confirmBadgeLogin);
+
+checkAuthAndStart();
+</script>
+</body>
+</html>
